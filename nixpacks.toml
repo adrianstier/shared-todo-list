@@ -1,0 +1,14 @@
+[phases.setup]
+nixPkgs = ["nodejs_22"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = [
+  "rm -rf outlook-addin server web",
+  "npm run build"
+]
+
+[start]
+cmd = "npm run start"
