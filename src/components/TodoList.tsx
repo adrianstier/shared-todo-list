@@ -332,7 +332,8 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
   const filteredTodos = todos.filter((todo) => {
     if (filter === 'active') return !todo.completed;
     if (filter === 'completed') return todo.completed;
-    return true;
+    // 'all' filter now shows only active tasks (completed tasks go to 'Completed' tab)
+    return !todo.completed;
   });
 
   const stats = {
