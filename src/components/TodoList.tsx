@@ -10,7 +10,8 @@ import CelebrationEffect from './CelebrationEffect';
 import ProgressSummary from './ProgressSummary';
 import WelcomeBackNotification, { shouldShowWelcomeNotification } from './WelcomeBackNotification';
 import { v4 as uuidv4 } from 'uuid';
-import { LayoutList, LayoutGrid, Wifi, WifiOff } from 'lucide-react';
+import { LayoutList, LayoutGrid, Wifi, WifiOff, Mail } from 'lucide-react';
+import Link from 'next/link';
 import { AuthUser } from '@/types/todo';
 import UserSwitcher from './UserSwitcher';
 
@@ -345,6 +346,16 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
             </div>
 
             <div className="flex items-center gap-3">
+              {/* Outlook Add-in Link */}
+              <Link
+                href="/outlook-setup"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white/70 hover:text-white hover:bg-white/10 transition-all"
+                title="Install Outlook Add-in"
+              >
+                <Mail className="w-4 h-4" />
+                <span className="hidden sm:inline">Outlook</span>
+              </Link>
+
               {/* View toggle */}
               <div className="flex bg-white/10 rounded-lg p-1">
                 <button
