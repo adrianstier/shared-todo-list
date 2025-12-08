@@ -41,18 +41,23 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
       return;
     }
 
-    const { data, error: fetchError } = await supabase
-      .from('todos')
-      .select('*')
-      .order('created_at', { ascending: false });
+    // Fetch todos and registered users in parallel
+    const [todosResult, usersResult] = await Promise.all([
+      supabase.from('todos').select('*').order('created_at', { ascending: false }),
+      supabase.from('users').select('name').order('name'),
+    ]);
 
-    if (fetchError) {
-      console.error('Error fetching todos:', fetchError);
+    if (todosResult.error) {
+      console.error('Error fetching todos:', todosResult.error);
       setError('Failed to connect to database. Please check your Supabase configuration.');
     } else {
-      setTodos(data || []);
-      const uniqueUsers = [...new Set((data || []).map((t: Todo) => t.created_by).filter(Boolean))];
-      setUsers((prev) => [...new Set([...prev, ...uniqueUsers])]);
+      setTodos(todosResult.data || []);
+      // Get all registered user names
+      const registeredUsers = (usersResult.data || []).map((u: { name: string }) => u.name);
+      // Also include any users from todos (for backwards compatibility)
+      const todoUsers = [...new Set((todosResult.data || []).map((t: Todo) => t.created_by).filter(Boolean))];
+      // Combine and deduplicate
+      setUsers([...new Set([...registeredUsers, ...todoUsers])]);
       setError(null);
     }
     setLoading(false);
@@ -70,7 +75,6 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
     const init = async () => {
       await fetchTodos();
       if (isMounted) {
-        setUsers((prev) => [...new Set([...prev, userName])]);
         if (shouldShowWelcomeNotification(currentUser)) {
           setShowWelcomeBack(true);
         }
