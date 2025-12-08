@@ -100,7 +100,7 @@ export default function UserSwitcher({ currentUser, onUserChange }: UserSwitcher
     }
   };
 
-  const handlePinKeyDown = (e: React.KeyboardEvent, index: number, refs: React.MutableRefObject<(HTMLInputElement | null)[]>, pinState: string[], setPinState: (p: string[]) => void) => {
+  const handlePinKeyDown = (e: React.KeyboardEvent, index: number, refs: React.MutableRefObject<(HTMLInputElement | null)[]>, pinState: string[]) => {
     if (e.key === 'Backspace' && !pinState[index] && index > 0) {
       refs.current[index - 1]?.focus();
     }
@@ -228,55 +228,64 @@ export default function UserSwitcher({ currentUser, onUserChange }: UserSwitcher
       <div ref={dropdownRef} className="relative">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+          className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/10 transition-colors"
         >
           <div
-            className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-medium"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-semibold shadow-md"
             style={{ backgroundColor: currentUser.color }}
           >
             {getUserInitials(currentUser.name)}
           </div>
-          <ChevronDown className={`w-4 h-4 text-neutral-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown className={`w-4 h-4 text-white/70 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </button>
 
         {isOpen && (
-          <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-neutral-900 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-800 overflow-hidden z-50">
-            <div className="p-3 border-b border-neutral-100 dark:border-neutral-800">
-              <div className="flex items-center gap-2">
+          <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50">
+            {/* Current user */}
+            <div className="p-3 bg-slate-50 border-b border-slate-100">
+              <div className="flex items-center gap-3">
                 <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium"
+                  className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-semibold shadow-md"
                   style={{ backgroundColor: currentUser.color }}
                 >
                   {getUserInitials(currentUser.name)}
                 </div>
-                <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                  {currentUser.name}
+                <div>
+                  <p className="font-semibold text-slate-900">{currentUser.name}</p>
+                  <p className="text-xs text-slate-400">Signed in</p>
                 </div>
               </div>
             </div>
 
-            <div className="max-h-40 overflow-y-auto">
-              {users
-                .filter(u => u.id !== currentUser.id)
-                .map(user => (
-                  <button
-                    key={user.id}
-                    onClick={() => handleUserSelect(user)}
-                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-left text-sm"
-                  >
-                    <div
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs"
-                      style={{ backgroundColor: user.color }}
+            {/* Other users */}
+            {users.filter(u => u.id !== currentUser.id).length > 0 && (
+              <div className="py-2">
+                <p className="px-3 pb-1 text-xs font-medium text-slate-400 uppercase tracking-wide">
+                  Switch Account
+                </p>
+                {users
+                  .filter(u => u.id !== currentUser.id)
+                  .map(user => (
+                    <button
+                      key={user.id}
+                      onClick={() => handleUserSelect(user)}
+                      className="w-full flex items-center gap-3 px-3 py-2 hover:bg-slate-50 transition-colors text-left"
                     >
-                      {getUserInitials(user.name)}
-                    </div>
-                    <span className="text-neutral-700 dark:text-neutral-300">{user.name}</span>
-                    <Lock className="w-3 h-3 text-neutral-400 ml-auto" />
-                  </button>
-                ))}
-            </div>
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-medium"
+                        style={{ backgroundColor: user.color }}
+                      >
+                        {getUserInitials(user.name)}
+                      </div>
+                      <span className="flex-1 text-slate-700">{user.name}</span>
+                      <Lock className="w-3.5 h-3.5 text-slate-300" />
+                    </button>
+                  ))}
+              </div>
+            )}
 
-            <div className="border-t border-neutral-100 dark:border-neutral-800">
+            {/* Actions */}
+            <div className="border-t border-slate-100">
               <button
                 onClick={() => {
                   setIsOpen(false);
@@ -286,14 +295,14 @@ export default function UserSwitcher({ currentUser, onUserChange }: UserSwitcher
                   setConfirmPin(['', '', '', '']);
                   setError('');
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-sm text-blue-600"
+                className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-slate-50 text-[#0033A0] font-medium transition-colors"
               >
                 <UserPlus className="w-4 h-4" />
-                Add User
+                Add New User
               </button>
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm text-red-600"
+                className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-red-50 text-red-500 font-medium transition-colors"
               >
                 <LogOut className="w-4 h-4" />
                 Sign Out
@@ -306,29 +315,40 @@ export default function UserSwitcher({ currentUser, onUserChange }: UserSwitcher
       {/* Modal */}
       {modalState !== 'closed' && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           onClick={closeModal}
         >
           <div
             onClick={e => e.stopPropagation()}
-            className="bg-white dark:bg-neutral-900 rounded-lg shadow-xl max-w-sm w-full p-6"
+            className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden"
           >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                {modalState === 'pin' ? 'Enter PIN' : 'New User'}
+            {/* Modal header */}
+            <div className="flex items-center justify-between p-4 border-b border-slate-100">
+              <h3 className="text-lg font-semibold text-slate-900">
+                {modalState === 'pin' ? 'Enter PIN' : 'Add New User'}
               </h3>
-              <button onClick={closeModal} className="p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded">
-                <X className="w-5 h-5 text-neutral-400" />
+              <button
+                onClick={closeModal}
+                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             {modalState === 'pin' && selectedUser && (
-              <div>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
-                  Enter PIN for {selectedUser.name}
-                </p>
+              <div className="p-6">
+                <div className="text-center mb-6">
+                  <div
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-xl font-bold mx-auto mb-3 shadow-lg"
+                    style={{ backgroundColor: selectedUser.color }}
+                  >
+                    {getUserInitials(selectedUser.name)}
+                  </div>
+                  <p className="font-medium text-slate-900">{selectedUser.name}</p>
+                  <p className="text-sm text-slate-400">Enter 4-digit PIN</p>
+                </div>
 
-                <div className="flex justify-center gap-2 mb-4">
+                <div className="flex justify-center gap-3 mb-4">
                   {pin.map((digit, index) => (
                     <input
                       key={index}
@@ -338,15 +358,21 @@ export default function UserSwitcher({ currentUser, onUserChange }: UserSwitcher
                       maxLength={1}
                       value={digit}
                       onChange={(e) => handlePinChange(index, e.target.value, pinInputRefs, pin, setPin)}
-                      onKeyDown={(e) => handlePinKeyDown(e, index, pinInputRefs, pin, setPin)}
+                      onKeyDown={(e) => handlePinKeyDown(e, index, pinInputRefs, pin)}
                       disabled={lockoutSeconds > 0 || isSubmitting}
-                      className="w-12 h-14 text-center text-xl font-bold rounded-lg border-2 border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-blue-500"
+                      className={`w-12 h-14 text-center text-xl font-bold rounded-xl border-2 transition-all focus:outline-none ${
+                        lockoutSeconds > 0
+                          ? 'border-red-200 bg-red-50'
+                          : digit
+                            ? 'border-[#0033A0] bg-[#0033A0]/5'
+                            : 'border-slate-200 focus:border-[#0033A0]'
+                      } text-slate-900`}
                     />
                   ))}
                 </div>
 
                 {(error || lockoutSeconds > 0) && (
-                  <div className="flex items-center justify-center gap-2 text-red-500 text-sm">
+                  <div className="flex items-center justify-center gap-2 text-red-500 text-sm bg-red-50 py-2 px-4 rounded-lg">
                     <AlertCircle className="w-4 h-4" />
                     {lockoutSeconds > 0 ? `Wait ${lockoutSeconds}s` : error}
                   </div>
@@ -355,26 +381,22 @@ export default function UserSwitcher({ currentUser, onUserChange }: UserSwitcher
             )}
 
             {modalState === 'register' && (
-              <div className="space-y-4">
+              <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Name
-                  </label>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Name</label>
                   <input
                     type="text"
                     value={newUserName}
                     onChange={(e) => setNewUserName(e.target.value)}
-                    placeholder="Your name"
+                    placeholder="Enter name"
                     autoFocus
-                    className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-[#0033A0] focus:outline-none transition-colors text-slate-900 placeholder-slate-300"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    PIN
-                  </label>
-                  <div className="flex justify-center gap-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Choose PIN</label>
+                  <div className="flex justify-center gap-3">
                     {newUserPin.map((digit, index) => (
                       <input
                         key={index}
@@ -384,18 +406,18 @@ export default function UserSwitcher({ currentUser, onUserChange }: UserSwitcher
                         maxLength={1}
                         value={digit}
                         onChange={(e) => handlePinChange(index, e.target.value, newPinRefs, newUserPin, setNewUserPin)}
-                        onKeyDown={(e) => handlePinKeyDown(e, index, newPinRefs, newUserPin, setNewUserPin)}
-                        className="w-12 h-12 text-center text-lg font-bold rounded-lg border-2 border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-blue-500"
+                        onKeyDown={(e) => handlePinKeyDown(e, index, newPinRefs, newUserPin)}
+                        className={`w-12 h-14 text-center text-xl font-bold rounded-xl border-2 transition-all focus:outline-none ${
+                          digit ? 'border-[#0033A0] bg-[#0033A0]/5' : 'border-slate-200 focus:border-[#0033A0]'
+                        } text-slate-900`}
                       />
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Confirm PIN
-                  </label>
-                  <div className="flex justify-center gap-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Confirm PIN</label>
+                  <div className="flex justify-center gap-3">
                     {confirmPin.map((digit, index) => (
                       <input
                         key={index}
@@ -405,15 +427,17 @@ export default function UserSwitcher({ currentUser, onUserChange }: UserSwitcher
                         maxLength={1}
                         value={digit}
                         onChange={(e) => handlePinChange(index, e.target.value, confirmPinRefs, confirmPin, setConfirmPin)}
-                        onKeyDown={(e) => handlePinKeyDown(e, index, confirmPinRefs, confirmPin, setConfirmPin)}
-                        className="w-12 h-12 text-center text-lg font-bold rounded-lg border-2 border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-blue-500"
+                        onKeyDown={(e) => handlePinKeyDown(e, index, confirmPinRefs, confirmPin)}
+                        className={`w-12 h-14 text-center text-xl font-bold rounded-xl border-2 transition-all focus:outline-none ${
+                          digit ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 focus:border-[#0033A0]'
+                        } text-slate-900`}
                       />
                     ))}
                   </div>
                 </div>
 
                 {error && (
-                  <div className="flex items-center justify-center gap-2 text-red-500 text-sm">
+                  <div className="flex items-center justify-center gap-2 text-red-500 text-sm bg-red-50 py-2 px-4 rounded-lg">
                     <AlertCircle className="w-4 h-4" />
                     {error}
                   </div>
@@ -422,7 +446,7 @@ export default function UserSwitcher({ currentUser, onUserChange }: UserSwitcher
                 <button
                   onClick={handleRegister}
                   disabled={isSubmitting}
-                  className="w-full py-3 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 rounded-lg font-medium hover:bg-neutral-800 dark:hover:bg-neutral-200 disabled:opacity-50"
+                  className="w-full py-3.5 bg-[#0033A0] hover:bg-[#002878] text-white rounded-xl font-semibold transition-colors disabled:opacity-50 shadow-lg shadow-[#0033A0]/30"
                 >
                   {isSubmitting ? 'Creating...' : 'Create Account'}
                 </button>

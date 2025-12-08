@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { UserPlus, AlertCircle, ChevronLeft, Lock } from 'lucide-react';
+import { UserPlus, AlertCircle, ChevronLeft, Lock, Shield } from 'lucide-react';
 import { AuthUser } from '@/types/todo';
 import {
   hashPin,
@@ -210,54 +210,73 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950">
-        <p className="text-neutral-500">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0033A0] to-[#001a52]">
+        <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950 p-4">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0033A0] to-[#001a52] p-4">
+      {/* Decorative elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#D4A853]/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2" />
+      </div>
+
+      <div className="w-full max-w-sm relative z-10">
         {screen === 'users' && (
-          <div className="bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 overflow-hidden">
-            <div className="p-6 bg-[#0033A0] text-white">
-              <h1 className="text-xl font-semibold">
-                Sign In
-              </h1>
-              <p className="text-sm text-blue-200 mt-1">
-                Select your account
-              </p>
+          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="p-8 text-center bg-gradient-to-b from-white to-slate-50">
+              <div className="w-16 h-16 bg-[#0033A0] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[#0033A0]/30">
+                <Shield className="w-8 h-8 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold text-slate-900">Bealer Agency</h1>
+              <p className="text-sm text-[#0033A0] font-medium mt-1">Task Management</p>
             </div>
 
+            {/* Users list */}
             {users.length > 0 ? (
-              <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                {users.map((user) => (
-                  <button
-                    key={user.id}
-                    onClick={() => handleUserSelect(user)}
-                    className="w-full flex items-center gap-3 p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-left"
-                  >
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium"
-                      style={{ backgroundColor: user.color }}
+              <div className="px-4 pb-2">
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wide px-2 mb-2">
+                  Select Account
+                </p>
+                <div className="space-y-2">
+                  {users.map((user) => (
+                    <button
+                      key={user.id}
+                      onClick={() => handleUserSelect(user)}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors text-left group"
                     >
-                      {getUserInitials(user.name)}
-                    </div>
-                    <span className="flex-1 text-neutral-900 dark:text-neutral-100">
-                      {user.name}
-                    </span>
-                    <Lock className="w-4 h-4 text-neutral-400" />
-                  </button>
-                ))}
+                      <div
+                        className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-semibold shadow-md"
+                        style={{ backgroundColor: user.color }}
+                      >
+                        {getUserInitials(user.name)}
+                      </div>
+                      <div className="flex-1">
+                        <span className="font-medium text-slate-900">{user.name}</span>
+                        {user.last_login && (
+                          <p className="text-xs text-slate-400">
+                            Last: {new Date(user.last_login).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                      <Lock className="w-4 h-4 text-slate-300 group-hover:text-[#0033A0] transition-colors" />
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : (
-              <div className="p-8 text-center text-neutral-500">
-                No users yet
+              <div className="px-4 py-8 text-center">
+                <p className="text-slate-400">No users yet</p>
+                <p className="text-sm text-slate-300">Create your first account</p>
               </div>
             )}
 
-            <div className="p-4 border-t border-neutral-100 dark:border-neutral-800">
+            {/* Add user button */}
+            <div className="p-4">
               <button
                 onClick={() => {
                   setScreen('register');
@@ -266,9 +285,9 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                   setConfirmPin(['', '', '', '']);
                   setError('');
                 }}
-                className="w-full flex items-center justify-center gap-2 py-3 text-[#D4A853] hover:bg-[#D4A853]/10 rounded-lg transition-colors font-medium"
+                className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#D4A853] hover:bg-[#c49943] text-white rounded-xl font-semibold transition-colors shadow-lg shadow-[#D4A853]/30"
               >
-                <UserPlus className="w-4 h-4" />
+                <UserPlus className="w-5 h-5" />
                 Add New User
               </button>
             </div>
@@ -276,29 +295,27 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
         )}
 
         {screen === 'pin' && selectedUser && (
-          <div className="bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 p-6">
+          <div className="bg-white rounded-2xl shadow-2xl p-6">
             <button
               onClick={() => setScreen('users')}
-              className="flex items-center gap-1 text-sm text-neutral-500 hover:text-neutral-700 mb-6"
+              className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 mb-6 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
               Back
             </button>
 
-            <div className="text-center mb-6">
+            <div className="text-center mb-8">
               <div
-                className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-medium mx-auto mb-3"
+                className="w-20 h-20 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4 shadow-lg"
                 style={{ backgroundColor: selectedUser.color }}
               >
                 {getUserInitials(selectedUser.name)}
               </div>
-              <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                {selectedUser.name}
-              </h2>
-              <p className="text-sm text-neutral-500">Enter your PIN</p>
+              <h2 className="text-xl font-bold text-slate-900">{selectedUser.name}</h2>
+              <p className="text-sm text-slate-400 mt-1">Enter your 4-digit PIN</p>
             </div>
 
-            <div className="flex justify-center gap-3 mb-4">
+            <div className="flex justify-center gap-3 mb-6">
               {pin.map((digit, index) => (
                 <input
                   key={index}
@@ -310,38 +327,54 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                   onChange={(e) => handlePinChange(index, e.target.value, pinRefs, pin, setPin)}
                   onKeyDown={(e) => handlePinKeyDown(e, index, pinRefs, pin)}
                   disabled={lockoutSeconds > 0 || isSubmitting}
-                  className="w-14 h-16 text-center text-2xl font-bold rounded-lg border-2 border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#0033A0]"
+                  className={`w-14 h-16 text-center text-2xl font-bold rounded-xl border-2 transition-all focus:outline-none ${
+                    lockoutSeconds > 0
+                      ? 'border-red-200 bg-red-50'
+                      : digit
+                        ? 'border-[#0033A0] bg-[#0033A0]/5'
+                        : 'border-slate-200 focus:border-[#0033A0]'
+                  } text-slate-900`}
                 />
               ))}
             </div>
 
             {(error || lockoutSeconds > 0) && (
-              <div className="flex items-center justify-center gap-2 text-red-500 text-sm">
+              <div className="flex items-center justify-center gap-2 text-red-500 text-sm bg-red-50 py-2 px-4 rounded-lg">
                 <AlertCircle className="w-4 h-4" />
-                {lockoutSeconds > 0 ? `Wait ${lockoutSeconds}s` : error}
+                {lockoutSeconds > 0 ? `Locked. Wait ${lockoutSeconds}s` : error}
+              </div>
+            )}
+
+            {isSubmitting && (
+              <div className="flex justify-center">
+                <div className="w-6 h-6 border-2 border-[#0033A0] border-t-transparent rounded-full animate-spin" />
               </div>
             )}
           </div>
         )}
 
         {screen === 'register' && (
-          <div className="bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 p-6">
+          <div className="bg-white rounded-2xl shadow-2xl p-6">
             <button
               onClick={() => setScreen('users')}
-              className="flex items-center gap-1 text-sm text-neutral-500 hover:text-neutral-700 mb-6"
+              className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 mb-6 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
               Back
             </button>
 
-            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-6">
-              Create Account
-            </h2>
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-[#0033A0]/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <UserPlus className="w-8 h-8 text-[#0033A0]" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-900">Create Account</h2>
+              <p className="text-sm text-slate-400 mt-1">Enter your details</p>
+            </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  Name
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Your Name
                 </label>
                 <input
                   type="text"
@@ -349,15 +382,15 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                   onChange={(e) => setNewUserName(e.target.value)}
                   placeholder="Enter your name"
                   autoFocus
-                  className="w-full px-3 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-[#0033A0] focus:outline-none transition-colors text-slate-900 placeholder-slate-300"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  PIN
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Choose a PIN
                 </label>
-                <div className="flex justify-center gap-2">
+                <div className="flex justify-center gap-3">
                   {newUserPin.map((digit, index) => (
                     <input
                       key={index}
@@ -368,17 +401,19 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                       value={digit}
                       onChange={(e) => handlePinChange(index, e.target.value, newPinRefs, newUserPin, setNewUserPin)}
                       onKeyDown={(e) => handlePinKeyDown(e, index, newPinRefs, newUserPin)}
-                      className="w-12 h-14 text-center text-xl font-bold rounded-lg border-2 border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#0033A0]"
+                      className={`w-12 h-14 text-center text-xl font-bold rounded-xl border-2 transition-all focus:outline-none ${
+                        digit ? 'border-[#0033A0] bg-[#0033A0]/5' : 'border-slate-200 focus:border-[#0033A0]'
+                      } text-slate-900`}
                     />
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
                   Confirm PIN
                 </label>
-                <div className="flex justify-center gap-2">
+                <div className="flex justify-center gap-3">
                   {confirmPin.map((digit, index) => (
                     <input
                       key={index}
@@ -389,14 +424,16 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                       value={digit}
                       onChange={(e) => handlePinChange(index, e.target.value, confirmPinRefs, confirmPin, setConfirmPin)}
                       onKeyDown={(e) => handlePinKeyDown(e, index, confirmPinRefs, confirmPin)}
-                      className="w-12 h-14 text-center text-xl font-bold rounded-lg border-2 border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#0033A0]"
+                      className={`w-12 h-14 text-center text-xl font-bold rounded-xl border-2 transition-all focus:outline-none ${
+                        digit ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 focus:border-[#0033A0]'
+                      } text-slate-900`}
                     />
                   ))}
                 </div>
               </div>
 
               {error && (
-                <div className="flex items-center justify-center gap-2 text-red-500 text-sm">
+                <div className="flex items-center justify-center gap-2 text-red-500 text-sm bg-red-50 py-2 px-4 rounded-lg">
                   <AlertCircle className="w-4 h-4" />
                   {error}
                 </div>
@@ -405,13 +442,18 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
               <button
                 onClick={handleRegister}
                 disabled={isSubmitting}
-                className="w-full py-3 bg-[#0033A0] text-white rounded-lg font-medium hover:bg-[#002878] disabled:opacity-50 transition-colors"
+                className="w-full py-3.5 bg-[#0033A0] hover:bg-[#002878] text-white rounded-xl font-semibold transition-colors disabled:opacity-50 shadow-lg shadow-[#0033A0]/30"
               >
                 {isSubmitting ? 'Creating...' : 'Create Account'}
               </button>
             </div>
           </div>
         )}
+
+        {/* Footer */}
+        <p className="text-center text-white/50 text-sm mt-6">
+          Powered by Allstate
+        </p>
       </div>
     </div>
   );

@@ -299,60 +299,65 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950">
-        <div className="text-neutral-500">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="w-8 h-8 border-3 border-[#0033A0] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950 px-4">
-        <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg border border-neutral-200 dark:border-neutral-800 max-w-md w-full">
-          <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
-            Setup Required
-          </h2>
-          <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-3">{error}</p>
-          <p className="text-xs text-neutral-500">See SETUP.md for instructions</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+        <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Setup Required</h2>
+          <p className="text-slate-500 text-sm mb-4">{error}</p>
+          <p className="text-xs text-slate-400">See SETUP.md for instructions</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-[#0033A0] text-white">
-        <div className={`mx-auto px-4 sm:px-6 py-3 ${viewMode === 'kanban' ? 'max-w-6xl' : 'max-w-2xl'}`}>
+      <header className="sticky top-0 z-40 bg-[#0033A0] shadow-lg">
+        <div className={`mx-auto px-4 sm:px-6 py-4 ${viewMode === 'kanban' ? 'max-w-6xl' : 'max-w-2xl'}`}>
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-lg font-semibold">
-                Tasks
-              </h1>
-              <p className="text-sm text-blue-200">
-                {userName}
-              </p>
+            {/* Logo & Title */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                <span className="text-white font-bold text-lg">B</span>
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-white">Bealer Agency</h1>
+                <p className="text-xs text-white/70">Welcome back, {userName}</p>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {/* View toggle */}
-              <div className="flex bg-blue-800 rounded-md p-0.5">
+              <div className="flex bg-white/10 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-1.5 rounded ${
+                  className={`p-2 rounded-md transition-all ${
                     viewMode === 'list'
-                      ? 'bg-white text-[#0033A0]'
-                      : 'text-blue-200 hover:text-white'
+                      ? 'bg-white text-[#0033A0] shadow-md'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                 >
                   <LayoutList className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setViewMode('kanban')}
-                  className={`p-1.5 rounded ${
+                  className={`p-2 rounded-md transition-all ${
                     viewMode === 'kanban'
-                      ? 'bg-white text-[#0033A0]'
-                      : 'text-blue-200 hover:text-white'
+                      ? 'bg-white text-[#0033A0] shadow-md'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                 >
                   <LayoutGrid className="w-4 h-4" />
@@ -360,12 +365,12 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
               </div>
 
               {/* Connection status */}
-              <div className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs ${
+              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium ${
                 connected
-                  ? 'text-green-300 bg-green-900/30'
-                  : 'text-red-300 bg-red-900/30'
+                  ? 'text-emerald-100 bg-emerald-500/20'
+                  : 'text-red-100 bg-red-500/20'
               }`}>
-                {connected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                {connected ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
                 {connected ? 'Live' : 'Offline'}
               </div>
 
@@ -376,11 +381,21 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
       </header>
 
       {/* Main */}
-      <main className={`mx-auto px-4 sm:px-6 py-6 ${viewMode === 'kanban' ? 'max-w-6xl' : 'max-w-2xl'}`}>
-        {/* Stats */}
-        <div className="flex gap-4 mb-6 text-sm">
-          <span className="text-neutral-500">{stats.active} active</span>
-          <span className="text-neutral-400">{stats.completed} done</span>
+      <main className={`mx-auto px-4 sm:px-6 py-8 ${viewMode === 'kanban' ? 'max-w-6xl' : 'max-w-2xl'}`}>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+            <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
+            <p className="text-sm text-slate-500">Total Tasks</p>
+          </div>
+          <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+            <p className="text-2xl font-bold text-[#0033A0]">{stats.active}</p>
+            <p className="text-sm text-slate-500">Active</p>
+          </div>
+          <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+            <p className="text-2xl font-bold text-emerald-600">{stats.completed}</p>
+            <p className="text-sm text-slate-500">Completed</p>
+          </div>
         </div>
 
         {/* Add todo */}
@@ -390,15 +405,15 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
 
         {/* Filter */}
         {viewMode === 'list' && (
-          <div className="flex gap-1 mb-4">
+          <div className="flex gap-2 mb-6">
             {(['all', 'active', 'completed'] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-3 py-1.5 text-sm rounded ${
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
                   filter === f
-                    ? 'bg-[#0033A0] text-white'
-                    : 'text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                    ? 'bg-[#0033A0] text-white shadow-md shadow-[#0033A0]/30'
+                    : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
                 }`}
               >
                 {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -409,11 +424,19 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
 
         {/* List or Kanban */}
         {viewMode === 'list' ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {filteredTodos.length === 0 ? (
-              <p className="text-center text-neutral-400 py-12">
-                {filter === 'completed' ? 'No completed tasks' : 'No tasks yet'}
-              </p>
+              <div className="text-center py-16">
+                <div className="w-20 h-20 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </div>
+                <p className="text-slate-500 font-medium">
+                  {filter === 'completed' ? 'No completed tasks yet' : 'No tasks yet'}
+                </p>
+                <p className="text-sm text-slate-400 mt-1">Add your first task above</p>
+              </div>
             ) : (
               filteredTodos.map((todo) => (
                 <TodoItem
