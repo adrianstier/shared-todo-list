@@ -26,7 +26,6 @@ import {
   Trash2,
   Clock,
   AlertCircle,
-  GripVertical,
   Plus
 } from 'lucide-react';
 import { Todo, TodoStatus, TodoPriority, PRIORITY_CONFIG } from '@/types/todo';
@@ -102,11 +101,13 @@ function SortableCard({ todo, users, onDelete, onAssign, onSetDueDate, onSetPrio
     <motion.div
       ref={setNodeRef}
       style={style}
+      {...attributes}
+      {...listeners}
       layout
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: isDragging ? 0.5 : 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className={`bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden transition-shadow hover:shadow-md ${
+      className={`bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden transition-shadow hover:shadow-md cursor-grab active:cursor-grabbing ${
         isDragging ? 'shadow-xl ring-2 ring-[#0033A0]' : ''
       }`}
       onMouseEnter={() => setShowActions(true)}
@@ -119,17 +120,8 @@ function SortableCard({ todo, users, onDelete, onAssign, onSetDueDate, onSetPrio
       />
 
       <div className="p-3">
-        {/* Header with drag handle */}
-        <div className="flex items-start gap-2">
-          <button
-            {...attributes}
-            {...listeners}
-            className="mt-0.5 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 cursor-grab active:cursor-grabbing text-slate-400"
-          >
-            <GripVertical className="w-4 h-4" />
-          </button>
-
-          <div className="flex-1 min-w-0">
+        {/* Card content */}
+        <div className="flex-1 min-w-0">
             <p className={`text-sm font-medium leading-snug ${
               todo.completed ? 'line-through text-slate-400' : 'text-slate-800 dark:text-slate-100'
             }`}>
@@ -177,7 +169,6 @@ function SortableCard({ todo, users, onDelete, onAssign, onSetDueDate, onSetPrio
               </span>
             </div>
           </div>
-        </div>
 
         {/* Quick actions */}
         <AnimatePresence>
