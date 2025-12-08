@@ -113,7 +113,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
     };
   }, [fetchTodos, userName, currentUser]);
 
-  const addTodo = async (text: string, priority: TodoPriority, dueDate?: string) => {
+  const addTodo = async (text: string, priority: TodoPriority, dueDate?: string, assignedTo?: string) => {
     const newTodo: Todo = {
       id: uuidv4(),
       text,
@@ -123,6 +123,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
       created_at: new Date().toISOString(),
       created_by: userName,
       due_date: dueDate,
+      assigned_to: assignedTo,
     };
 
     setTodos((prev) => [newTodo, ...prev]);
@@ -400,7 +401,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
 
         {/* Add todo */}
         <div className="mb-6">
-          <AddTodo onAdd={addTodo} />
+          <AddTodo onAdd={addTodo} users={users} />
         </div>
 
         {/* Filter */}

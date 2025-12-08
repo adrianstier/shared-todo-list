@@ -1,26 +1,29 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Calendar, Flag } from 'lucide-react';
+import { Plus, Calendar, Flag, User } from 'lucide-react';
 import { TodoPriority } from '@/types/todo';
 
 interface AddTodoProps {
-  onAdd: (text: string, priority: TodoPriority, dueDate?: string) => void;
+  onAdd: (text: string, priority: TodoPriority, dueDate?: string, assignedTo?: string) => void;
+  users: string[];
 }
 
-export default function AddTodo({ onAdd }: AddTodoProps) {
+export default function AddTodo({ onAdd, users }: AddTodoProps) {
   const [text, setText] = useState('');
   const [priority, setPriority] = useState<TodoPriority>('medium');
   const [dueDate, setDueDate] = useState('');
+  const [assignedTo, setAssignedTo] = useState('');
   const [showOptions, setShowOptions] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (text.trim()) {
-      onAdd(text.trim(), priority, dueDate || undefined);
+      onAdd(text.trim(), priority, dueDate || undefined, assignedTo || undefined);
       setText('');
       setPriority('medium');
       setDueDate('');
+      setAssignedTo('');
       setShowOptions(false);
     }
   };
@@ -75,6 +78,21 @@ export default function AddTodo({ onAdd }: AddTodoProps) {
               onChange={(e) => setDueDate(e.target.value)}
               className="text-sm px-2 py-1.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 focus:border-[#0033A0] text-slate-600"
             />
+          </div>
+
+          {/* Assign to */}
+          <div className="flex items-center gap-2">
+            <User className="w-4 h-4 text-slate-400" />
+            <select
+              value={assignedTo}
+              onChange={(e) => setAssignedTo(e.target.value)}
+              className="text-sm px-2 py-1.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 focus:border-[#0033A0] text-slate-600"
+            >
+              <option value="">Unassigned</option>
+              {users.map((user) => (
+                <option key={user} value={user}>{user}</option>
+              ))}
+            </select>
           </div>
         </div>
       )}
