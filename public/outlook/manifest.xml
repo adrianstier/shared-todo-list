@@ -7,16 +7,16 @@
   xsi:type="MailApp">
 
   <!-- Basic Identity -->
-  <Id>bealer-agency-todo-addin-v1</Id>
+  <Id>a44deb28-92f5-4974-98bb-123447daeb33</Id>
   <Version>1.0.0.0</Version>
   <ProviderName>Bealer Agency</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Bealer Todo"/>
   <Description DefaultValue="Convert emails to todo items for your team using AI"/>
 
-  <!-- Icon URLs - UPDATE WITH YOUR DEPLOYED URL -->
-  <IconUrl DefaultValue="https://shared-todo-list-production.up.railway.app/outlook/icon-64.svg"/>
-  <HighResolutionIconUrl DefaultValue="https://shared-todo-list-production.up.railway.app/outlook/icon-128.svg"/>
+  <!-- Icon URLs -->
+  <IconUrl DefaultValue="https://shared-todo-list-production.up.railway.app/outlook/icon-64.png"/>
+  <HighResolutionIconUrl DefaultValue="https://shared-todo-list-production.up.railway.app/outlook/icon-128.png"/>
 
   <!-- Support URL -->
   <SupportUrl DefaultValue="https://shared-todo-list-production.up.railway.app"/>
@@ -100,13 +100,11 @@
       <!-- Resources -->
       <Resources>
         <bt:Images>
-          <!-- UPDATE THESE WITH YOUR DEPLOYED URL -->
-          <bt:Image id="Icon.16x16" DefaultValue="https://shared-todo-list-production.up.railway.app/outlook/icon-16.svg"/>
-          <bt:Image id="Icon.32x32" DefaultValue="https://shared-todo-list-production.up.railway.app/outlook/icon-32.svg"/>
-          <bt:Image id="Icon.80x80" DefaultValue="https://shared-todo-list-production.up.railway.app/outlook/icon-80.svg"/>
+          <bt:Image id="Icon.16x16" DefaultValue="https://shared-todo-list-production.up.railway.app/outlook/icon-16.png"/>
+          <bt:Image id="Icon.32x32" DefaultValue="https://shared-todo-list-production.up.railway.app/outlook/icon-32.png"/>
+          <bt:Image id="Icon.80x80" DefaultValue="https://shared-todo-list-production.up.railway.app/outlook/icon-80.png"/>
         </bt:Images>
         <bt:Urls>
-          <!-- UPDATE THESE WITH YOUR DEPLOYED URL -->
           <bt:Url id="Commands.Url" DefaultValue="https://shared-todo-list-production.up.railway.app/outlook/commands.html"/>
           <bt:Url id="Taskpane.Url" DefaultValue="https://shared-todo-list-production.up.railway.app/outlook/taskpane.html"/>
         </bt:Urls>
