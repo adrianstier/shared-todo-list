@@ -37,9 +37,8 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <!-- UPDATE WITH YOUR DEPLOYED URL -->
         <SourceLocation DefaultValue="https://shared-todo-list-production.up.railway.app/outlook/taskpane.html"/>
-        <RequestedHeight>500</RequestedHeight>
+        <RequestedHeight>250</RequestedHeight>
       </DesktopSettings>
     </Form>
   </FormSettings>
