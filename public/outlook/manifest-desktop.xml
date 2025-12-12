@@ -2,10 +2,12 @@
 <OfficeApp
   xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0"
   xsi:type="MailApp">
 
   <Id>a44deb28-92f5-4974-98bb-123447daeb33</Id>
-  <Version>1.0.0.1</Version>
+  <Version>1.0.0.2</Version>
   <ProviderName>Bealer Agency</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Bealer Todo"/>
@@ -14,7 +16,7 @@
   <IconUrl DefaultValue="https://shared-todo-list-production.up.railway.app/outlook/icon-64.png"/>
   <HighResolutionIconUrl DefaultValue="https://shared-todo-list-production.up.railway.app/outlook/icon-128.png"/>
 
-  <SupportUrl DefaultValue="https://shared-todo-list-production.up.railway.app"/>
+  <SupportUrl DefaultValue="https://shared-todo-list-production.up.railway.app/outlook-setup"/>
 
   <AppDomains>
     <AppDomain>https://shared-todo-list-production.up.railway.app</AppDomain>
@@ -34,13 +36,75 @@
     <Form xsi:type="ItemRead">
       <DesktopSettings>
         <SourceLocation DefaultValue="https://shared-todo-list-production.up.railway.app/outlook/taskpane.html"/>
-        <RequestedHeight>250</RequestedHeight>
+        <RequestedHeight>450</RequestedHeight>
       </DesktopSettings>
     </Form>
   </FormSettings>
 
   <Permissions>ReadItem</Permissions>
 
-  <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read"/>
+  <Rule xsi:type="RuleCollection" Mode="Or">
+    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read"/>
+  </Rule>
+
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Requirements>
+      <bt:Sets DefaultMinVersion="1.3">
+        <bt:Set Name="Mailbox"/>
+      </bt:Sets>
+    </Requirements>
+
+    <Hosts>
+      <Host xsi:type="MailHost">
+        <DesktopFormFactor>
+          <FunctionFile resid="functionFile"/>
+
+          <!-- Message Read -->
+          <ExtensionPoint xsi:type="MessageReadCommandSurface">
+            <OfficeTab id="TabDefault">
+              <Group id="msgReadGroup">
+                <Label resid="groupLabel"/>
+                <Control xsi:type="Button" id="msgReadOpenPaneButton">
+                  <Label resid="paneReadButtonLabel"/>
+                  <Supertip>
+                    <Title resid="paneReadSuperTipTitle"/>
+                    <Description resid="paneReadSuperTipDescription"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="icon16"/>
+                    <bt:Image size="32" resid="icon32"/>
+                    <bt:Image size="80" resid="icon80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <SourceLocation resid="taskpaneUrl"/>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+
+    <Resources>
+      <bt:Images>
+        <bt:Image id="icon16" DefaultValue="https://shared-todo-list-production.up.railway.app/outlook/icon-16.png"/>
+        <bt:Image id="icon32" DefaultValue="https://shared-todo-list-production.up.railway.app/outlook/icon-32.png"/>
+        <bt:Image id="icon80" DefaultValue="https://shared-todo-list-production.up.railway.app/outlook/icon-80.png"/>
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="functionFile" DefaultValue="https://shared-todo-list-production.up.railway.app/outlook/taskpane.html"/>
+        <bt:Url id="taskpaneUrl" DefaultValue="https://shared-todo-list-production.up.railway.app/outlook/taskpane.html"/>
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="groupLabel" DefaultValue="Bealer Todo"/>
+        <bt:String id="paneReadButtonLabel" DefaultValue="Create Task"/>
+        <bt:String id="paneReadSuperTipTitle" DefaultValue="Create Task from Email"/>
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="paneReadSuperTipDescription" DefaultValue="Use AI to convert this email into a task for your team. Automatically extracts task details, priority, and due dates."/>
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
 
 </OfficeApp>
