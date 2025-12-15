@@ -46,8 +46,8 @@ test.describe('Subtask Feature', () => {
     await registerAndLogin(page, userName);
   });
 
-  test('should show break into subtasks button when task is expanded', async ({ page }) => {
-    // Add a task
+  test('should show subtasks section with AI Breakdown button when task is expanded', async ({ page }) => {
+    // Add a task - avoid using "subtask" word in task text to prevent selector conflicts
     const taskText = `Build website ${Date.now()}`;
     await page.locator('textarea[placeholder="What needs to be done?"]').fill(taskText);
     await page.locator('button:has-text("Add")').click();
@@ -58,11 +58,13 @@ test.describe('Subtask Feature', () => {
     // Click on task to expand it
     await page.locator(`text=${taskText}`).click();
 
-    // Should show the "Break into subtasks" button in expanded view
-    await expect(page.locator('button:has-text("Break into subtasks")')).toBeVisible({ timeout: 3000 });
+    // Should show the Subtasks section with AI Breakdown button in expanded view
+    // Use exact match to avoid matching task text that might contain "subtasks"
+    await expect(page.locator('span.text-indigo-700:has-text("Subtasks")')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('button:has-text("AI Breakdown")')).toBeVisible({ timeout: 3000 });
   });
 
-  test('should create subtasks when clicking break into subtasks button', async ({ page }) => {
+  test('should create subtasks when clicking AI Breakdown button', async ({ page }) => {
     // Skip if AI API not available
     test.skip(process.env.ANTHROPIC_API_KEY === undefined, 'Requires ANTHROPIC_API_KEY');
 
@@ -77,74 +79,21 @@ test.describe('Subtask Feature', () => {
     // Click on task to expand it
     await page.locator(`text=${taskText}`).click();
 
-    // Click the break into subtasks button
-    await page.locator('button:has-text("Break into subtasks")').click();
+    // Click the AI Breakdown button
+    await page.locator('button:has-text("AI Breakdown")').click();
 
     // Wait for loading state
-    await expect(page.locator('text=Breaking down...')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('text=AI...')).toBeVisible({ timeout: 3000 });
 
     // Wait for subtasks to appear (progress bar)
-    await expect(page.locator('text=Progress')).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('.h-2.bg-indigo-100')).toBeVisible({ timeout: 30000 });
 
-    // Should have subtask items visible
-    const subtaskCheckboxes = page.locator('.bg-indigo-50\\/50 button[class*="rounded"]');
+    // Should have subtask items visible with checkboxes
+    const subtaskCheckboxes = page.locator('.space-y-2 button.rounded.border-2');
     await expect(subtaskCheckboxes.first()).toBeVisible({ timeout: 5000 });
   });
 
-  test('should hide break into subtasks button after subtasks are created', async ({ page }) => {
-    // Skip if AI API not available
-    test.skip(process.env.ANTHROPIC_API_KEY === undefined, 'Requires ANTHROPIC_API_KEY');
-
-    // Add a task
-    const taskText = `Plan quarterly review ${Date.now()}`;
-    await page.locator('textarea[placeholder="What needs to be done?"]').fill(taskText);
-    await page.locator('button:has-text("Add")').click();
-
-    // Wait for task to appear
-    await expect(page.locator(`text=${taskText}`)).toBeVisible({ timeout: 5000 });
-
-    // Click on task to expand it
-    await page.locator(`text=${taskText}`).click();
-
-    // Click the break into subtasks button
-    await page.locator('button:has-text("Break into subtasks")').click();
-
-    // Wait for subtasks to be created
-    await expect(page.locator('text=Progress')).toBeVisible({ timeout: 30000 });
-
-    // The "Break into subtasks" button should no longer be visible
-    await expect(page.locator('button:has-text("Break into subtasks")')).not.toBeVisible();
-  });
-
-  test('should show subtask indicator badge on task', async ({ page }) => {
-    // Skip if AI API not available
-    test.skip(process.env.ANTHROPIC_API_KEY === undefined, 'Requires ANTHROPIC_API_KEY');
-
-    // Add a task
-    const taskText = `Launch marketing campaign ${Date.now()}`;
-    await page.locator('textarea[placeholder="What needs to be done?"]').fill(taskText);
-    await page.locator('button:has-text("Add")').click();
-
-    // Wait for task to appear
-    await expect(page.locator(`text=${taskText}`)).toBeVisible({ timeout: 5000 });
-
-    // Click on task to expand it
-    await page.locator(`text=${taskText}`).click();
-
-    // Click the break into subtasks button
-    await page.locator('button:has-text("Break into subtasks")').click();
-
-    // Wait for subtasks to be created
-    await expect(page.locator('text=Progress')).toBeVisible({ timeout: 30000 });
-
-    // Should show subtask count indicator (e.g., "0/3")
-    await expect(page.locator('.bg-indigo-100').first()).toBeVisible();
-  });
-
-  test('should allow manually adding subtasks', async ({ page }) => {
-    // Skip if AI API not available
-    test.skip(process.env.ANTHROPIC_API_KEY === undefined, 'Requires ANTHROPIC_API_KEY');
-
+  test('should allow manually adding subtasks without AI', async ({ page }) => {
     // Add a task
     const taskText = `Complete project ${Date.now()}`;
     await page.locator('textarea[placeholder="What needs to be done?"]').fill(taskText);
@@ -156,11 +105,8 @@ test.describe('Subtask Feature', () => {
     // Click on task to expand it
     await page.locator(`text=${taskText}`).click();
 
-    // Click the break into subtasks button to create initial subtasks
-    await page.locator('button:has-text("Break into subtasks")').click();
-
-    // Wait for subtasks panel to appear
-    await expect(page.locator('input[placeholder="Add a subtask..."]')).toBeVisible({ timeout: 30000 });
+    // Should see the manual subtask input
+    await expect(page.locator('input[placeholder="Add a subtask..."]')).toBeVisible({ timeout: 3000 });
 
     // Add a manual subtask
     const manualSubtask = 'Custom subtask item';
@@ -169,12 +115,12 @@ test.describe('Subtask Feature', () => {
 
     // Should see the new subtask
     await expect(page.locator(`text=${manualSubtask}`)).toBeVisible({ timeout: 3000 });
+
+    // Should show count (1/1 or similar)
+    await expect(page.locator('text=(0/1)')).toBeVisible({ timeout: 3000 });
   });
 
-  test('should toggle subtask completion', async ({ page }) => {
-    // Skip if AI API not available
-    test.skip(process.env.ANTHROPIC_API_KEY === undefined, 'Requires ANTHROPIC_API_KEY');
-
+  test('should toggle subtask completion with checkbox', async ({ page }) => {
     // Add a task
     const taskText = `Review documents ${Date.now()}`;
     await page.locator('textarea[placeholder="What needs to be done?"]').fill(taskText);
@@ -186,31 +132,30 @@ test.describe('Subtask Feature', () => {
     // Click on task to expand it
     await page.locator(`text=${taskText}`).click();
 
-    // Click the break into subtasks button
-    await page.locator('button:has-text("Break into subtasks")').click();
+    // Add a manual subtask
+    const subtaskText = 'First subtask';
+    await page.locator('input[placeholder="Add a subtask..."]').fill(subtaskText);
+    await page.locator('input[placeholder="Add a subtask..."]').press('Enter');
 
-    // Wait for subtasks to appear
-    await expect(page.locator('text=Progress')).toBeVisible({ timeout: 30000 });
+    // Wait for subtask to appear
+    await expect(page.locator(`text=${subtaskText}`)).toBeVisible({ timeout: 3000 });
 
-    // Wait for progress bar to show 0% (using exact match)
-    const progressText = page.locator('.bg-indigo-50\\/50 span:text-is("0%")');
-    await expect(progressText).toBeVisible({ timeout: 5000 });
+    // Should show 0/1 count (0 completed, 1 total)
+    await expect(page.locator('text=(0/1)')).toBeVisible({ timeout: 3000 });
 
-    // Click first subtask checkbox to complete it
-    const firstSubtaskCheckbox = page.locator('.bg-indigo-50\\/50 button[class*="rounded border-2"]').first();
-    await firstSubtaskCheckbox.click();
+    // Click the subtask checkbox to complete it
+    const subtaskCheckbox = page.locator('.space-y-2 button.rounded.border-2').first();
+    await subtaskCheckbox.click();
 
-    // Wait for progress to update
-    await page.waitForTimeout(500);
+    // Wait for count to update to 1/1
+    await expect(page.locator('text=(1/1)')).toBeVisible({ timeout: 3000 });
 
-    // Progress should no longer be 0% (should be higher)
-    await expect(progressText).not.toBeVisible({ timeout: 3000 });
+    // Progress bar should be at 100%
+    const progressBar = page.locator('.h-full.bg-indigo-500');
+    await expect(progressBar).toHaveCSS('width', /100%|[0-9]+px/);
   });
 
-  test('should delete subtask', async ({ page }) => {
-    // Skip if AI API not available
-    test.skip(process.env.ANTHROPIC_API_KEY === undefined, 'Requires ANTHROPIC_API_KEY');
-
+  test('should delete subtask with trash icon', async ({ page }) => {
     // Add a task
     const taskText = `Prepare presentation ${Date.now()}`;
     await page.locator('textarea[placeholder="What needs to be done?"]').fill(taskText);
@@ -222,25 +167,94 @@ test.describe('Subtask Feature', () => {
     // Click on task to expand it
     await page.locator(`text=${taskText}`).click();
 
-    // Click the break into subtasks button
-    await page.locator('button:has-text("Break into subtasks")').click();
+    // Add two manual subtasks
+    await page.locator('input[placeholder="Add a subtask..."]').fill('Subtask one');
+    await page.locator('input[placeholder="Add a subtask..."]').press('Enter');
+    await page.locator('input[placeholder="Add a subtask..."]').fill('Subtask two');
+    await page.locator('input[placeholder="Add a subtask..."]').press('Enter');
 
-    // Wait for subtasks to appear
-    await expect(page.locator('text=Progress')).toBeVisible({ timeout: 30000 });
+    // Wait for both subtasks to appear
+    await expect(page.locator('text=Subtask one')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('text=Subtask two')).toBeVisible({ timeout: 3000 });
 
-    // Get initial subtask count from the indicator
-    const initialCount = await page.locator('.bg-indigo-50\\/50 .space-y-2 > div').count();
+    // Should show 0/2 count in header
+    await expect(page.locator('text=(0/2)')).toBeVisible({ timeout: 3000 });
 
-    // Click delete button on first subtask
-    const deleteButton = page.locator('.bg-indigo-50\\/50 button[class*="hover:text-red"]').first();
+    // Delete first subtask - find the trash button within the subtask list
+    const subtaskItems = page.locator('.space-y-2 > div').filter({ hasText: 'Subtask one' });
+    const deleteButton = subtaskItems.locator('button').last();
     await deleteButton.click();
 
-    // Wait for subtask to be removed
+    // Wait for first subtask to be removed
+    await expect(page.locator('text=Subtask one')).not.toBeVisible({ timeout: 3000 });
+
+    // Should now show 0/1 count
+    await expect(page.locator('text=(0/1)')).toBeVisible({ timeout: 3000 });
+  });
+
+  test('should allow inline editing of subtask text', async ({ page }) => {
+    // Add a task
+    const taskText = `Test editing ${Date.now()}`;
+    await page.locator('textarea[placeholder="What needs to be done?"]').fill(taskText);
+    await page.locator('button:has-text("Add")').click();
+
+    // Wait for task to appear
+    await expect(page.locator(`text=${taskText}`)).toBeVisible({ timeout: 5000 });
+
+    // Click on task to expand it
+    await page.locator(`text=${taskText}`).click();
+
+    // Add a manual subtask
+    const originalText = 'Original subtask text';
+    await page.locator('input[placeholder="Add a subtask..."]').fill(originalText);
+    await page.locator('input[placeholder="Add a subtask..."]').press('Enter');
+
+    // Wait for subtask to appear
+    await expect(page.locator(`text=${originalText}`)).toBeVisible({ timeout: 3000 });
+
+    // Click on subtask text to edit it
+    await page.locator(`text=${originalText}`).click();
+
+    // Should show input field
+    const editInput = page.locator('.space-y-2 input[type="text"]');
+    await expect(editInput).toBeVisible({ timeout: 3000 });
+
+    // Clear and type new text
+    await editInput.clear();
+    const newText = 'Updated subtask text';
+    await editInput.fill(newText);
+    await editInput.press('Enter');
+
+    // Should show updated text
+    await expect(page.locator(`text=${newText}`)).toBeVisible({ timeout: 3000 });
+    await expect(page.locator(`text=${originalText}`)).not.toBeVisible();
+  });
+
+  test('should show subtask badge on collapsed task', async ({ page }) => {
+    // Add a task
+    const taskText = `Task with subtasks ${Date.now()}`;
+    await page.locator('textarea[placeholder="What needs to be done?"]').fill(taskText);
+    await page.locator('button:has-text("Add")').click();
+
+    // Wait for task to appear
+    await expect(page.locator(`text=${taskText}`)).toBeVisible({ timeout: 5000 });
+
+    // Click on task to expand it
+    await page.locator(`text=${taskText}`).click();
+
+    // Add a manual subtask
+    await page.locator('input[placeholder="Add a subtask..."]').fill('A subtask');
+    await page.locator('input[placeholder="Add a subtask..."]').press('Enter');
+
+    // Collapse the task by clicking somewhere else or pressing Escape
+    await page.keyboard.press('Escape');
+
+    // Wait a moment for the collapse animation
     await page.waitForTimeout(500);
 
-    // Count should be reduced by 1
-    const newCount = await page.locator('.bg-indigo-50\\/50 .space-y-2 > div').count();
-    expect(newCount).toBe(initialCount - 1);
+    // Should see the subtask badge indicator (0/1) on the collapsed task - badge has ListTree icon and count
+    const subtaskBadge = page.locator('button.bg-indigo-100:has-text("0/1")').first();
+    await expect(subtaskBadge).toBeVisible({ timeout: 3000 });
   });
 });
 

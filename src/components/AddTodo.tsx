@@ -359,7 +359,7 @@ export default function AddTodo({ onAdd, users }: AddTodoProps) {
       {showEnhanced && enhancedTask?.wasEnhanced && (
         <div className="mx-3 mb-2 px-3 py-2 bg-purple-100 rounded-lg text-sm text-purple-700 flex items-center gap-2">
           <Sparkles className="w-4 h-4" />
-          <span>AI enhanced your task. Review and confirm, or edit below.</span>
+          <span>AI enhanced your task. Review above and adjust options below, then confirm.</span>
         </div>
       )}
 

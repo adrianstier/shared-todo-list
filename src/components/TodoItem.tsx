@@ -1,10 +1,107 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Trash2, Calendar, User, Flag, Copy, MessageSquare, ChevronDown, ChevronUp, Repeat, ListTree, Loader2, Plus, Mail } from 'lucide-react';
+import { Check, Trash2, Calendar, User, Flag, Copy, MessageSquare, ChevronDown, ChevronUp, Repeat, ListTree, Loader2, Plus, Mail, Pencil } from 'lucide-react';
 import { Todo, TodoPriority, PRIORITY_CONFIG, RecurrencePattern, Subtask } from '@/types/todo';
 import Celebration from './Celebration';
 import ContentToSubtasksImporter from './ContentToSubtasksImporter';
+
+// Subtask item component with inline editing
+interface SubtaskItemProps {
+  subtask: Subtask;
+  onToggle: (id: string) => void;
+  onDelete: (id: string) => void;
+  onUpdate: (id: string, text: string) => void;
+}
+
+function SubtaskItem({ subtask, onToggle, onDelete, onUpdate }: SubtaskItemProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(subtask.text);
+
+  const handleSave = () => {
+    if (editText.trim() && editText.trim() !== subtask.text) {
+      onUpdate(subtask.id, editText.trim());
+    } else {
+      setEditText(subtask.text);
+    }
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSave();
+    } else if (e.key === 'Escape') {
+      setEditText(subtask.text);
+      setIsEditing(false);
+    }
+  };
+
+  return (
+    <div
+      className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-lg transition-colors ${
+        subtask.completed ? 'bg-slate-50 opacity-60' : 'bg-white'
+      }`}
+    >
+      {/* Checkbox */}
+      <button
+        onClick={() => onToggle(subtask.id)}
+        className={`w-6 h-6 sm:w-5 sm:h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all touch-manipulation ${
+          subtask.completed
+            ? 'bg-indigo-500 border-indigo-500'
+            : 'border-slate-300 hover:border-indigo-400 active:border-indigo-500'
+        }`}
+      >
+        {subtask.completed && <Check className="w-3.5 h-3.5 sm:w-3 sm:h-3 text-white" strokeWidth={3} />}
+      </button>
+
+      {/* Text or edit input */}
+      {isEditing ? (
+        <input
+          type="text"
+          value={editText}
+          onChange={(e) => setEditText(e.target.value)}
+          onBlur={handleSave}
+          onKeyDown={handleKeyDown}
+          autoFocus
+          className="flex-1 text-sm px-2 py-1 rounded border border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        />
+      ) : (
+        <span
+          onClick={() => !subtask.completed && setIsEditing(true)}
+          className={`flex-1 text-sm leading-snug cursor-pointer ${
+            subtask.completed ? 'text-slate-400 line-through' : 'text-slate-700 hover:text-indigo-600'
+          }`}
+          title={subtask.completed ? undefined : 'Click to edit'}
+        >
+          {subtask.text}
+        </span>
+      )}
+
+      {/* Estimated time */}
+      {subtask.estimatedMinutes && !isEditing && (
+        <span className="text-xs text-slate-400 whitespace-nowrap">{subtask.estimatedMinutes}m</span>
+      )}
+
+      {/* Edit button */}
+      {!isEditing && !subtask.completed && (
+        <button
+          onClick={() => setIsEditing(true)}
+          className="p-1.5 -m-1 text-slate-300 hover:text-indigo-500 active:text-indigo-600 rounded transition-colors touch-manipulation opacity-0 group-hover:opacity-100 sm:opacity-100"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+        </button>
+      )}
+
+      {/* Delete button */}
+      <button
+        onClick={() => onDelete(subtask.id)}
+        className="p-1.5 -m-1 text-slate-300 hover:text-red-500 active:text-red-600 rounded transition-colors touch-manipulation"
+      >
+        <Trash2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+      </button>
+    </div>
+  );
+}
 
 interface TodoItemProps {
   todo: Todo;
@@ -147,6 +244,14 @@ export default function TodoItem({
   const deleteSubtask = (subtaskId: string) => {
     if (!onUpdateSubtasks) return;
     const updated = subtasks.filter(s => s.id !== subtaskId);
+    onUpdateSubtasks(todo.id, updated);
+  };
+
+  const updateSubtaskText = (subtaskId: string, newText: string) => {
+    if (!onUpdateSubtasks) return;
+    const updated = subtasks.map(s =>
+      s.id === subtaskId ? { ...s, text: newText } : s
+    );
     onUpdateSubtasks(todo.id, updated);
   };
 
@@ -322,8 +427,8 @@ export default function TodoItem({
         </div>
       )}
 
-      {/* Subtasks display */}
-      {showSubtasks && subtasks.length > 0 && (
+      {/* Subtasks display - separate toggle when not expanded */}
+      {!expanded && showSubtasks && subtasks.length > 0 && (
         <div className="mx-3 sm:mx-4 mb-3 p-3 bg-indigo-50/50 rounded-lg border border-indigo-100">
           {/* Progress bar */}
           <div className="mb-3">
@@ -342,60 +447,15 @@ export default function TodoItem({
           {/* Subtask list */}
           <div className="space-y-2">
             {subtasks.map((subtask) => (
-              <div
+              <SubtaskItem
                 key={subtask.id}
-                className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-lg transition-colors ${
-                  subtask.completed ? 'bg-slate-50 opacity-60' : 'bg-white'
-                }`}
-              >
-                {/* Larger touch target for checkbox on mobile */}
-                <button
-                  onClick={() => toggleSubtask(subtask.id)}
-                  className={`w-6 h-6 sm:w-5 sm:h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all touch-manipulation ${
-                    subtask.completed
-                      ? 'bg-indigo-500 border-indigo-500'
-                      : 'border-slate-300 hover:border-indigo-400 active:border-indigo-500'
-                  }`}
-                >
-                  {subtask.completed && <Check className="w-3.5 h-3.5 sm:w-3 sm:h-3 text-white" strokeWidth={3} />}
-                </button>
-                <span className={`flex-1 text-sm leading-snug ${subtask.completed ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
-                  {subtask.text}
-                </span>
-                {subtask.estimatedMinutes && (
-                  <span className="text-xs text-slate-400 whitespace-nowrap">{subtask.estimatedMinutes}m</span>
-                )}
-                {/* Larger delete button touch target */}
-                <button
-                  onClick={() => deleteSubtask(subtask.id)}
-                  className="p-2 -m-1 text-slate-400 hover:text-red-500 active:text-red-600 rounded transition-colors touch-manipulation"
-                >
-                  <Trash2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                </button>
-              </div>
+                subtask={subtask}
+                onToggle={toggleSubtask}
+                onDelete={deleteSubtask}
+                onUpdate={updateSubtaskText}
+              />
             ))}
           </div>
-
-          {/* Add manual subtask - taller input on mobile */}
-          {onUpdateSubtasks && (
-            <div className="mt-3 flex gap-2">
-              <input
-                type="text"
-                value={newSubtaskText}
-                onChange={(e) => setNewSubtaskText(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && addManualSubtask()}
-                placeholder="Add a subtask..."
-                className="flex-1 text-base sm:text-sm px-3 py-2.5 sm:py-1.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
-              />
-              <button
-                onClick={addManualSubtask}
-                disabled={!newSubtaskText.trim()}
-                className="px-4 sm:px-3 py-2.5 sm:py-1.5 bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 disabled:bg-slate-200 text-white disabled:text-slate-400 rounded-lg text-sm font-medium transition-colors touch-manipulation"
-              >
-                <Plus className="w-5 h-5 sm:w-4 sm:h-4" />
-              </button>
-            </div>
-          )}
         </div>
       )}
 
@@ -451,44 +511,97 @@ export default function TodoItem({
             )}
           </div>
 
-          {/* Subtask action buttons */}
+          {/* Subtasks section - always visible in expanded view */}
           {onUpdateSubtasks && (
-            <div className="flex flex-col sm:flex-row gap-2">
-              {/* Break down into subtasks button - only show if no subtasks yet */}
-              {subtasks.length === 0 && (
-                <button
-                  onClick={handleBreakdownTask}
-                  disabled={isBreakingDown}
-                  className="flex-1 sm:flex-initial text-base sm:text-sm px-4 py-3 sm:py-2 rounded-lg bg-indigo-100 hover:bg-indigo-200 active:bg-indigo-300 text-indigo-700 font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
-                >
-                  {isBreakingDown ? (
-                    <>
-                      <Loader2 className="w-5 h-5 sm:w-4 sm:h-4 animate-spin" />
-                      <span>Breaking down...</span>
-                    </>
-                  ) : (
-                    <>
-                      <ListTree className="w-5 h-5 sm:w-4 sm:h-4" />
-                      <span className="sm:hidden">Break into Subtasks</span>
-                      <span className="hidden sm:inline">Break into subtasks</span>
-                    </>
+            <div className="p-3 bg-indigo-50/50 rounded-lg border border-indigo-100">
+              {/* Header with AI buttons */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <ListTree className="w-4 h-4 text-indigo-600" />
+                  <span className="text-sm font-medium text-indigo-700">Subtasks</span>
+                  {subtasks.length > 0 && (
+                    <span className="text-xs text-indigo-500">({completedSubtasks}/{subtasks.length})</span>
                   )}
-                </button>
+                </div>
+                <div className="flex gap-2">
+                  {/* AI Break down button */}
+                  <button
+                    onClick={handleBreakdownTask}
+                    disabled={isBreakingDown}
+                    className="text-xs px-2.5 py-1.5 rounded-md bg-indigo-100 hover:bg-indigo-200 active:bg-indigo-300 text-indigo-700 font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+                  >
+                    {isBreakingDown ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>AI...</span>
+                      </>
+                    ) : (
+                      <>
+                        <ListTree className="w-3.5 h-3.5" />
+                        <span>AI Breakdown</span>
+                      </>
+                    )}
+                  </button>
+                  {/* Import button */}
+                  <button
+                    onClick={() => setShowContentImporter(true)}
+                    className="text-xs px-2.5 py-1.5 rounded-md bg-amber-100 hover:bg-amber-200 active:bg-amber-300 text-amber-700 font-medium flex items-center gap-1.5 transition-colors touch-manipulation"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    <span>Import</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Progress bar - only show if subtasks exist */}
+              {subtasks.length > 0 && (
+                <div className="mb-3">
+                  <div className="h-2 bg-indigo-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-indigo-500 transition-all duration-300"
+                      style={{ width: `${subtaskProgress}%` }}
+                    />
+                  </div>
+                </div>
               )}
 
-              {/* Import from Email/Voicemail button */}
-              <button
-                onClick={() => setShowContentImporter(true)}
-                className="flex-1 sm:flex-initial text-base sm:text-sm px-4 py-3 sm:py-2 rounded-lg bg-amber-100 hover:bg-amber-200 active:bg-amber-300 text-amber-700 font-medium flex items-center justify-center gap-2 transition-colors touch-manipulation"
-              >
-                <Mail className="w-5 h-5 sm:w-4 sm:h-4" />
-                <span className="sm:hidden">Import Email/Voicemail</span>
-                <span className="hidden sm:inline">Import Email/Voicemail</span>
-              </button>
+              {/* Subtask list with checkboxes */}
+              {subtasks.length > 0 && (
+                <div className="space-y-2 mb-3">
+                  {subtasks.map((subtask) => (
+                    <SubtaskItem
+                      key={subtask.id}
+                      subtask={subtask}
+                      onToggle={toggleSubtask}
+                      onDelete={deleteSubtask}
+                      onUpdate={updateSubtaskText}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Add manual subtask input */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newSubtaskText}
+                  onChange={(e) => setNewSubtaskText(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addManualSubtask()}
+                  placeholder="Add a subtask..."
+                  className="flex-1 text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
+                />
+                <button
+                  onClick={addManualSubtask}
+                  disabled={!newSubtaskText.trim()}
+                  className="px-3 py-2 bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 disabled:bg-slate-200 text-white disabled:text-slate-400 rounded-lg text-sm font-medium transition-colors touch-manipulation"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           )}
 
-          {/* Row 2: Notes */}
+          {/* Notes */}
           {onUpdateNotes && (
             <div>
               <label className="text-xs font-medium text-slate-500 mb-1 block">Notes</label>
