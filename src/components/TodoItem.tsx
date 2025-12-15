@@ -513,22 +513,22 @@ export default function TodoItem({
 
           {/* Subtasks section - always visible in expanded view */}
           {onUpdateSubtasks && (
-            <div className="p-3 bg-indigo-50/50 rounded-lg border border-indigo-100">
-              {/* Header with AI buttons */}
-              <div className="flex items-center justify-between mb-3">
+            <div className="p-3 bg-indigo-50/50 rounded-lg border border-indigo-100 overflow-hidden">
+              {/* Header with AI buttons - stacks on mobile */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
                 <div className="flex items-center gap-2">
-                  <ListTree className="w-4 h-4 text-indigo-600" />
+                  <ListTree className="w-4 h-4 text-indigo-600 flex-shrink-0" />
                   <span className="text-sm font-medium text-indigo-700">Subtasks</span>
                   {subtasks.length > 0 && (
                     <span className="text-xs text-indigo-500">({completedSubtasks}/{subtasks.length})</span>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-shrink-0">
                   {/* AI Break down button */}
                   <button
                     onClick={handleBreakdownTask}
                     disabled={isBreakingDown}
-                    className="text-xs px-2.5 py-1.5 rounded-md bg-indigo-100 hover:bg-indigo-200 active:bg-indigo-300 text-indigo-700 font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+                    className="text-xs px-2 py-1.5 rounded-md bg-indigo-100 hover:bg-indigo-200 active:bg-indigo-300 text-indigo-700 font-medium flex items-center gap-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
                   >
                     {isBreakingDown ? (
                       <>
@@ -538,14 +538,14 @@ export default function TodoItem({
                     ) : (
                       <>
                         <ListTree className="w-3.5 h-3.5" />
-                        <span>AI Breakdown</span>
+                        <span className="hidden xs:inline">AI </span><span>Breakdown</span>
                       </>
                     )}
                   </button>
                   {/* Import button */}
                   <button
                     onClick={() => setShowContentImporter(true)}
-                    className="text-xs px-2.5 py-1.5 rounded-md bg-amber-100 hover:bg-amber-200 active:bg-amber-300 text-amber-700 font-medium flex items-center gap-1.5 transition-colors touch-manipulation"
+                    className="text-xs px-2 py-1.5 rounded-md bg-amber-100 hover:bg-amber-200 active:bg-amber-300 text-amber-700 font-medium flex items-center gap-1 transition-colors touch-manipulation"
                   >
                     <Mail className="w-3.5 h-3.5" />
                     <span>Import</span>
