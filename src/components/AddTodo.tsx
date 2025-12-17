@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Plus, Calendar, Flag, User, Sparkles, Loader2, Mic, MicOff, FileAudio } from 'lucide-react';
-import VoicemailImporter from './VoicemailImporter';
+import { Plus, Calendar, Flag, User, Sparkles, Loader2, Mic, MicOff, ChevronDown } from 'lucide-react';
 import SmartParseModal from './SmartParseModal';
-import { TodoPriority, Subtask } from '@/types/todo';
+import { TodoPriority, Subtask, PRIORITY_CONFIG } from '@/types/todo';
 
 interface AddTodoProps {
   onAdd: (text: string, priority: TodoPriority, dueDate?: string, assignedTo?: string, subtasks?: Subtask[]) => void;
   users: string[];
+  darkMode?: boolean;
 }
 
 interface SmartParseResult {
@@ -77,7 +77,7 @@ declare global {
   }
 }
 
-export default function AddTodo({ onAdd, users }: AddTodoProps) {
+export default function AddTodo({ onAdd, users, darkMode = true }: AddTodoProps) {
   const [text, setText] = useState('');
   const [priority, setPriority] = useState<TodoPriority>('medium');
   const [dueDate, setDueDate] = useState('');
@@ -91,9 +91,16 @@ export default function AddTodo({ onAdd, users }: AddTodoProps) {
 
   // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
-  const [showVoicemailImporter, setShowVoicemailImporter] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // Check speech support on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setSpeechSupported('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+    }
+  }, []);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -190,12 +197,6 @@ export default function AddTodo({ onAdd, users }: AddTodoProps) {
     }
   };
 
-  const handleAddMultipleTasks = (tasks: Array<{ text: string; priority: TodoPriority; dueDate?: string; assignedTo?: string }>) => {
-    tasks.forEach(task => {
-      onAdd(task.text, task.priority, task.dueDate, task.assignedTo);
-    });
-  };
-
   // Quick add without AI
   const handleQuickAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -204,7 +205,14 @@ export default function AddTodo({ onAdd, users }: AddTodoProps) {
     resetForm();
   };
 
-  // AI button - always opens modal with parsed results
+  // Check if input might benefit from AI parsing
+  const isComplexInput = () => {
+    const lines = text.split('\n').filter(l => l.trim());
+    const hasBullets = /^[\s]*[-•*\d.)\]]\s/.test(text);
+    return text.length > 50 || lines.length > 2 || hasBullets;
+  };
+
+  // AI button - opens modal with parsed results
   const handleAiClick = async () => {
     if (!text.trim()) return;
 
@@ -270,138 +278,169 @@ export default function AddTodo({ onAdd, users }: AddTodoProps) {
     }
   };
 
+  const priorityConfig = PRIORITY_CONFIG[priority];
+
   return (
     <>
-      <form onSubmit={handleQuickAdd} className="bg-white rounded-xl border-2 border-slate-100 overflow-hidden shadow-sm">
-        <div className="flex items-start gap-3 p-3">
-          <div className="w-6 h-6 rounded-lg border-2 border-dashed border-slate-300 flex items-center justify-center flex-shrink-0 mt-1">
-            {isProcessing ? (
-              <Loader2 className="w-4 h-4 text-[#D4A853] animate-spin" />
-            ) : isRecording ? (
-              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-            ) : (
-              <Plus className="w-4 h-4 text-slate-400" />
-            )}
-          </div>
-          <textarea
-            ref={textareaRef}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onFocus={() => setShowOptions(true)}
-            onKeyDown={handleKeyDown}
-            placeholder={isRecording ? "Listening... speak your task" : "What needs to be done? Paste emails or notes, then click AI"}
-            className="flex-1 bg-transparent text-slate-800 placeholder-slate-400 focus:outline-none text-base resize-none overflow-y-auto min-h-[24px]"
-            style={{ maxHeight: '120px' }}
-            disabled={isProcessing}
-            rows={1}
-          />
-
-          {/* Voice input buttons */}
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={toggleRecording}
-              disabled={isProcessing}
-              className={`p-2 rounded-lg transition-colors ${
-                isRecording
-                  ? 'bg-red-500 hover:bg-red-600 text-white'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-              title={isRecording ? "Stop recording" : "Start voice input"}
-            >
-              {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowVoicemailImporter(true)}
-              disabled={isProcessing || isRecording}
-              className="p-2 rounded-lg bg-purple-100 hover:bg-purple-200 text-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Import voicemails"
-            >
-              <FileAudio className="w-4 h-4" />
-            </button>
-          </div>
-
+      <form
+        onSubmit={handleQuickAdd}
+        className={`rounded-xl border shadow-sm overflow-hidden ${
+          darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+        }`}
+      >
+        {/* Main input area */}
+        <div className="p-3">
           <div className="flex gap-2">
-            {/* AI Button - opens modal */}
-            <button
-              type="button"
-              onClick={handleAiClick}
-              disabled={!text.trim() || isProcessing}
-              className="px-3 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-slate-200 text-white disabled:text-slate-400 rounded-lg font-medium transition-colors disabled:cursor-not-allowed flex items-center gap-2"
-              title="AI organizes your input into task + subtasks"
-            >
-              {isProcessing ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Sparkles className="w-4 h-4" />
+            <div className="flex-1 relative">
+              <textarea
+                ref={textareaRef}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onFocus={() => setShowOptions(true)}
+                onKeyDown={handleKeyDown}
+                placeholder={isRecording ? "Listening... speak your task" : "Add a task... (paste text for AI help)"}
+                rows={1}
+                disabled={isProcessing}
+                aria-label="New task description"
+                className={`w-full px-3 py-2.5 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 border text-sm min-h-[44px] ${
+                  darkMode
+                    ? 'bg-slate-700 text-white placeholder-slate-400 border-slate-600'
+                    : 'bg-slate-50 text-slate-800 placeholder-slate-400 border-slate-200'
+                }`}
+                style={{ maxHeight: '120px' }}
+              />
+              {isRecording && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                </div>
               )}
-              <span className="hidden sm:inline">AI</span>
-            </button>
+            </div>
 
-            {/* Quick Add Button */}
-            <button
-              type="submit"
-              disabled={!text.trim() || isProcessing}
-              className="px-4 py-2 bg-[#D4A853] hover:bg-[#c49943] disabled:bg-slate-200 text-white disabled:text-slate-400 rounded-lg font-medium transition-colors disabled:cursor-not-allowed"
-              title="Add task as-is"
-            >
-              Add
-            </button>
+            {/* Action buttons */}
+            <div className="flex gap-1.5 flex-shrink-0">
+              {/* Voice input - only show if supported */}
+              {speechSupported && (
+                <button
+                  type="button"
+                  onClick={toggleRecording}
+                  disabled={isProcessing}
+                  className={`p-2.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                    isRecording
+                      ? 'bg-red-500 text-white animate-pulse'
+                      : darkMode
+                        ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                  } disabled:opacity-50`}
+                  aria-label={isRecording ? 'Stop recording' : 'Start voice input'}
+                  aria-pressed={isRecording}
+                >
+                  {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                </button>
+              )}
+
+              {/* AI button - prominent when complex input detected */}
+              {text.trim() && (
+                <button
+                  type="button"
+                  onClick={handleAiClick}
+                  disabled={isProcessing}
+                  className={`p-2.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                    isComplexInput()
+                      ? 'bg-purple-500 text-white hover:bg-purple-600'
+                      : darkMode
+                        ? 'bg-slate-700 text-purple-400 hover:bg-slate-600'
+                        : 'bg-purple-50 text-purple-600 hover:bg-purple-100'
+                  } disabled:opacity-50`}
+                  aria-label="Parse with AI"
+                  title={isComplexInput() ? 'Complex input detected - AI can help' : 'Parse with AI'}
+                >
+                  {isProcessing ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-5 h-5" />
+                  )}
+                </button>
+              )}
+
+              {/* Add button */}
+              <button
+                type="submit"
+                disabled={!text.trim() || isProcessing}
+                className="px-4 py-2.5 rounded-lg bg-[#0033A0] hover:bg-[#002878] disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium transition-colors min-h-[44px] flex items-center gap-2"
+                aria-label="Add task"
+              >
+                <Plus className="w-5 h-5" />
+                <span className="hidden sm:inline">Add</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Options row */}
-        {showOptions && (
-          <div className="px-4 pb-3 pt-1 border-t border-slate-100 flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-2">
-              <Flag className="w-4 h-4 text-slate-400" />
+        {/* Options row - visible when focused or has content */}
+        {(showOptions || text) && (
+          <div className={`px-3 pb-3 pt-3 border-t flex flex-wrap items-center gap-2 ${
+            darkMode ? 'border-slate-700' : 'border-slate-100'
+          }`}>
+            {/* Priority */}
+            <div className="relative">
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as TodoPriority)}
-                className="text-sm px-2 py-1.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 focus:border-[#0033A0] text-slate-700"
+                aria-label="Priority"
+                className={`appearance-none pl-7 pr-6 py-1.5 rounded-lg text-sm font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 min-h-[36px] ${
+                  darkMode ? 'bg-slate-700' : ''
+                }`}
+                style={{
+                  backgroundColor: darkMode ? undefined : priorityConfig.bgColor,
+                  color: priorityConfig.color,
+                }}
               >
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
                 <option value="urgent">Urgent</option>
               </select>
+              <Flag className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: priorityConfig.color }} />
+              <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none opacity-50" />
             </div>
 
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-slate-400" />
+            {/* Due date */}
+            <div className="relative">
               <input
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="text-sm px-2 py-1.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 focus:border-[#0033A0] text-slate-700"
+                aria-label="Due date"
+                className={`pl-7 pr-2 py-1.5 rounded-lg text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 min-h-[36px] ${
+                  darkMode
+                    ? 'bg-slate-700 text-white border-slate-600'
+                    : 'bg-slate-100 text-slate-700 border-slate-200'
+                } ${dueDate ? '' : darkMode ? 'text-slate-400' : 'text-slate-400'}`}
               />
+              <Calendar className={`absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
             </div>
 
-            <div className="flex items-center gap-2">
-              <User className="w-4 h-4 text-slate-400" />
+            {/* Assignee */}
+            <div className="relative">
               <select
                 value={assignedTo}
                 onChange={(e) => setAssignedTo(e.target.value)}
-                className="text-sm px-2 py-1.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 focus:border-[#0033A0] text-slate-700"
+                aria-label="Assign to"
+                className={`appearance-none pl-7 pr-6 py-1.5 rounded-lg text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 min-h-[36px] ${
+                  darkMode
+                    ? 'bg-slate-700 text-white'
+                    : 'bg-slate-100 text-slate-700'
+                } ${assignedTo ? '' : darkMode ? 'text-slate-400' : 'text-slate-500'}`}
               >
                 <option value="">Unassigned</option>
                 {users.map((user) => (
                   <option key={user} value={user}>{user}</option>
                 ))}
               </select>
+              <User className={`absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
+              <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none opacity-50" />
             </div>
           </div>
-        )}
-
-        {/* Voicemail Importer Modal */}
-        {showVoicemailImporter && (
-          <VoicemailImporter
-            onClose={() => setShowVoicemailImporter(false)}
-            onAddTasks={handleAddMultipleTasks}
-            users={users}
-          />
         )}
       </form>
 
@@ -422,12 +461,12 @@ export default function AddTodo({ onAdd, users }: AddTodoProps) {
 
       {/* Loading modal while processing */}
       {showModal && !parsedResult && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Processing">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          <div className="relative bg-white rounded-2xl shadow-2xl p-8">
+          <div className={`relative rounded-2xl shadow-2xl p-8 ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
             <div className="text-center">
               <Loader2 className="w-10 h-10 text-purple-500 animate-spin mx-auto mb-3" />
-              <p className="text-slate-600">Analyzing your input...</p>
+              <p className={darkMode ? 'text-slate-300' : 'text-slate-600'}>Analyzing your input...</p>
             </div>
           </div>
         </div>

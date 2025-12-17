@@ -9,14 +9,16 @@ import KanbanBoard from './KanbanBoard';
 import CelebrationEffect from './CelebrationEffect';
 import ProgressSummary from './ProgressSummary';
 import WelcomeBackNotification, { shouldShowWelcomeNotification } from './WelcomeBackNotification';
+import ConfirmDialog from './ConfirmDialog';
 import { v4 as uuidv4 } from 'uuid';
 import {
-  LayoutList, LayoutGrid, Wifi, WifiOff, Mail, Search,
+  LayoutList, LayoutGrid, Wifi, WifiOff, Search,
   ArrowUpDown, User, Calendar, AlertTriangle, CheckSquare,
-  Trash2, UserPlus, X
+  Trash2, X, Sun, Moon, ChevronDown
 } from 'lucide-react';
 import { AuthUser } from '@/types/todo';
 import UserSwitcher from './UserSwitcher';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface TodoListProps {
   currentUser: AuthUser;
@@ -53,26 +55,39 @@ const priorityOrder: Record<TodoPriority, number> = {
 
 export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
   const userName = currentUser.name;
+  const { theme, toggleTheme } = useTheme();
+  const darkMode = theme === 'dark';
+
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [users, setUsers] = useState<string[]>([]);
-  const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
 
-  // New state for enhanced features
+  // Search, sort, and filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState<SortOption>('created');
   const [quickFilter, setQuickFilter] = useState<QuickFilter>('all');
+  const [showCompleted, setShowCompleted] = useState(false);
+
+  // Bulk actions state
   const [selectedTodos, setSelectedTodos] = useState<Set<string>>(new Set());
-  const darkMode = true; // Always dark mode
   const [showBulkActions, setShowBulkActions] = useState(false);
 
+  // Celebration and notifications
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationText, setCelebrationText] = useState('');
   const [showProgressSummary, setShowProgressSummary] = useState(false);
   const [showWelcomeBack, setShowWelcomeBack] = useState(false);
+
+  // Confirm dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({ isOpen: false, title: '', message: '', onConfirm: () => {} });
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -85,7 +100,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
       // 'n' - focus new task input
       if (e.key === 'n' && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
-        const input = document.querySelector('input[placeholder*="task"]') as HTMLInputElement;
+        const input = document.querySelector('textarea[placeholder*="task"]') as HTMLTextAreaElement;
         if (input) input.focus();
       }
 
@@ -100,6 +115,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
       if (e.key === 'Escape') {
         setSelectedTodos(new Set());
         setSearchQuery('');
+        setShowBulkActions(false);
       }
 
       // '1-4' - quick filter shortcuts
@@ -111,11 +127,6 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  // Apply dark mode class on mount
-  useEffect(() => {
-    document.documentElement.classList.add('dark');
   }, []);
 
   const fetchTodos = useCallback(async () => {
@@ -305,7 +316,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
     if (!completedTodo.recurrence || !completedTodo.due_date) return;
 
     const currentDue = new Date(completedTodo.due_date);
-    let nextDue = new Date(currentDue);
+    const nextDue = new Date(currentDue);
 
     switch (completedTodo.recurrence) {
       case 'daily':
@@ -395,6 +406,19 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
         setTodos((prev) => [...prev, todoToDelete]);
       }
     }
+  };
+
+  const confirmDeleteTodo = (id: string) => {
+    const todo = todos.find(t => t.id === id);
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Task',
+      message: `Are you sure you want to delete "${todo?.text}"? This cannot be undone.`,
+      onConfirm: () => {
+        deleteTodo(id);
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+      },
+    });
   };
 
   const assignTodo = async (id: string, assignedTo: string | null) => {
@@ -521,23 +545,33 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
     }
   };
 
-  // Bulk actions
+  // Bulk actions with confirmation
   const bulkDelete = async () => {
-    const idsToDelete = Array.from(selectedTodos);
-    const todosToDelete = todos.filter(t => selectedTodos.has(t.id));
+    const count = selectedTodos.size;
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Tasks',
+      message: `Are you sure you want to delete ${count} task${count > 1 ? 's' : ''}? This cannot be undone.`,
+      onConfirm: async () => {
+        const idsToDelete = Array.from(selectedTodos);
+        const todosToDelete = todos.filter(t => selectedTodos.has(t.id));
 
-    setTodos((prev) => prev.filter((todo) => !selectedTodos.has(todo.id)));
-    setSelectedTodos(new Set());
+        setTodos((prev) => prev.filter((todo) => !selectedTodos.has(todo.id)));
+        setSelectedTodos(new Set());
+        setShowBulkActions(false);
 
-    const { error } = await supabase
-      .from('todos')
-      .delete()
-      .in('id', idsToDelete);
+        const { error } = await supabase
+          .from('todos')
+          .delete()
+          .in('id', idsToDelete);
 
-    if (error) {
-      console.error('Error bulk deleting:', error);
-      setTodos((prev) => [...prev, ...todosToDelete]);
-    }
+        if (error) {
+          console.error('Error bulk deleting:', error);
+          setTodos((prev) => [...prev, ...todosToDelete]);
+        }
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+      },
+    });
   };
 
   const bulkAssign = async (assignedTo: string) => {
@@ -549,6 +583,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
       )
     );
     setSelectedTodos(new Set());
+    setShowBulkActions(false);
 
     await supabase
       .from('todos')
@@ -565,6 +600,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
       )
     );
     setSelectedTodos(new Set());
+    setShowBulkActions(false);
 
     await supabase
       .from('todos')
@@ -624,12 +660,8 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
         break;
     }
 
-    // Apply status filter
-    if (filter === 'active') {
-      result = result.filter((todo) => !todo.completed);
-    } else if (filter === 'completed') {
-      result = result.filter((todo) => todo.completed);
-    } else if (filter === 'all' && quickFilter === 'all') {
+    // Apply completed filter
+    if (!showCompleted) {
       result = result.filter((todo) => !todo.completed);
     }
 
@@ -656,7 +688,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
     }
 
     return result;
-  }, [todos, searchQuery, quickFilter, filter, sortOption, userName]);
+  }, [todos, searchQuery, quickFilter, showCompleted, sortOption, userName]);
 
   const stats = {
     total: todos.length,
@@ -679,9 +711,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
       <div className={`min-h-screen flex items-center justify-center px-4 ${darkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
         <div className={`p-8 rounded-2xl shadow-xl border max-w-md w-full text-center ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
           <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
+            <AlertTriangle className="w-8 h-8 text-red-500" />
           </div>
           <h2 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Setup Required</h2>
           <p className={`text-sm mb-4 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{error}</p>
@@ -693,55 +723,68 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
 
   return (
     <div className={`min-h-screen transition-colors ${darkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
+      {/* Skip link for accessibility */}
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:bg-white focus:px-4 focus:py-2 focus:rounded-lg focus:z-50">
+        Skip to main content
+      </a>
+
       {/* Header */}
       <header className="sticky top-0 z-40 bg-[#0033A0] shadow-lg">
-        <div className={`mx-auto px-4 sm:px-6 py-4 ${viewMode === 'kanban' ? 'max-w-6xl' : 'max-w-2xl'}`}>
-          <div className="flex items-center justify-between">
-            {/* Logo & Title */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">B</span>
+        <div className={`mx-auto px-4 sm:px-6 py-3 ${viewMode === 'kanban' ? 'max-w-6xl' : 'max-w-2xl'}`}>
+          <div className="flex items-center justify-between gap-3">
+            {/* Logo & Context Info */}
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <span className="text-white font-bold text-sm">B</span>
               </div>
-              <div>
-                <h1 className="text-lg font-bold text-white">Bealer Agency</h1>
-                <p className="text-xs text-white/70">Welcome back, {userName}</p>
+              <div className="min-w-0">
+                <h1 className="text-base font-bold text-white truncate">Bealer Agency</h1>
+                {/* Show contextual info instead of "Welcome back" */}
+                <p className="text-xs text-white/70 truncate">
+                  {stats.active} active{stats.dueToday > 0 && ` • ${stats.dueToday} due today`}{stats.overdue > 0 && ` • ${stats.overdue} overdue`}
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              {/* View toggle */}
-              <div className="flex bg-white/10 rounded-lg p-1">
+            <div className="flex items-center gap-2">
+              {/* View toggle with labels */}
+              <div className="flex bg-white/10 rounded-lg p-0.5">
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2 rounded-md transition-all ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
                     viewMode === 'list'
                       ? 'bg-white text-[#0033A0] shadow-md'
                       : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
+                  aria-pressed={viewMode === 'list'}
+                  aria-label="List view"
                 >
-                  <LayoutList className="w-4 h-4" />
+                  <LayoutList className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">List</span>
                 </button>
                 <button
                   onClick={() => setViewMode('kanban')}
-                  className={`p-2 rounded-md transition-all ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
                     viewMode === 'kanban'
                       ? 'bg-white text-[#0033A0] shadow-md'
                       : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
+                  aria-pressed={viewMode === 'kanban'}
+                  aria-label="Board view"
                 >
-                  <LayoutGrid className="w-4 h-4" />
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Board</span>
                 </button>
               </div>
 
-              {/* Connection status */}
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium ${
-                connected
-                  ? 'text-emerald-100 bg-emerald-500/20'
-                  : 'text-red-100 bg-red-500/20'
-              }`}>
-                {connected ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
-                {connected ? 'Live' : 'Offline'}
-              </div>
+              {/* Theme toggle */}
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                aria-label={`Switch to ${darkMode ? 'light' : 'dark'} mode`}
+              >
+                {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
 
               <UserSwitcher currentUser={currentUser} onUserChange={onUserChange} />
             </div>
@@ -749,142 +792,177 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
         </div>
       </header>
 
+      {/* Connection status - floating indicator */}
+      <div className="fixed bottom-4 right-4 z-30">
+        <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium shadow-lg ${
+          connected
+            ? darkMode ? 'bg-emerald-900/90 text-emerald-200' : 'bg-emerald-100 text-emerald-700'
+            : darkMode ? 'bg-red-900/90 text-red-200' : 'bg-red-100 text-red-700'
+        }`}>
+          {connected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+          {connected ? 'Live' : 'Offline'}
+        </div>
+      </div>
+
       {/* Main */}
-      <main className={`mx-auto px-4 sm:px-6 py-8 ${viewMode === 'kanban' ? 'max-w-6xl' : 'max-w-2xl'}`}>
-        {/* Stats Cards */}
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-4 mb-8">
-          <div className={`rounded-xl p-4 border shadow-sm ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
-            <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>{stats.total}</p>
-            <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Total</p>
-          </div>
-          <div className={`rounded-xl p-4 border shadow-sm ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
-            <p className="text-2xl font-bold text-[#0033A0]">{stats.active}</p>
-            <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Active</p>
-          </div>
-          <div className={`rounded-xl p-4 border shadow-sm ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
-            <p className="text-2xl font-bold text-emerald-600">{stats.completed}</p>
-            <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Done</p>
-          </div>
-          <div className={`hidden sm:block rounded-xl p-4 border shadow-sm ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
-            <p className="text-2xl font-bold text-orange-500">{stats.dueToday}</p>
-            <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Due Today</p>
-          </div>
-          <div className={`hidden sm:block rounded-xl p-4 border shadow-sm ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
-            <p className="text-2xl font-bold text-red-500">{stats.overdue}</p>
-            <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Overdue</p>
-          </div>
+      <main id="main-content" className={`mx-auto px-4 sm:px-6 py-6 ${viewMode === 'kanban' ? 'max-w-6xl' : 'max-w-2xl'}`}>
+        {/* Actionable Stats Cards - Reduced to 3, always visible, clickable */}
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <button
+            onClick={() => { setQuickFilter('all'); setShowCompleted(false); }}
+            className={`rounded-xl p-3 border shadow-sm text-left transition-all hover:shadow-md ${
+              quickFilter === 'all' && !showCompleted
+                ? 'ring-2 ring-[#0033A0] border-[#0033A0]'
+                : ''
+            } ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}
+          >
+            <p className="text-xl sm:text-2xl font-bold text-[#0033A0]">{stats.active}</p>
+            <p className={`text-xs sm:text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>To Do</p>
+          </button>
+          <button
+            onClick={() => setQuickFilter('due_today')}
+            className={`rounded-xl p-3 border shadow-sm text-left transition-all hover:shadow-md ${
+              quickFilter === 'due_today'
+                ? 'ring-2 ring-orange-500 border-orange-500'
+                : ''
+            } ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}
+          >
+            <p className="text-xl sm:text-2xl font-bold text-orange-500">{stats.dueToday}</p>
+            <p className={`text-xs sm:text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Due Today</p>
+          </button>
+          <button
+            onClick={() => setQuickFilter('overdue')}
+            className={`rounded-xl p-3 border shadow-sm text-left transition-all hover:shadow-md ${
+              quickFilter === 'overdue'
+                ? 'ring-2 ring-red-500 border-red-500'
+                : ''
+            } ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}
+          >
+            <p className="text-xl sm:text-2xl font-bold text-red-500">{stats.overdue}</p>
+            <p className={`text-xs sm:text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Overdue</p>
+          </button>
         </div>
 
         {/* Add todo */}
         <div className="mb-6">
-          <AddTodo onAdd={addTodo} users={users} />
+          <AddTodo onAdd={addTodo} users={users} darkMode={darkMode} />
         </div>
 
-        {/* Search and Sort Bar */}
-        <div className={`flex flex-wrap gap-3 mb-4 p-3 rounded-xl ${darkMode ? 'bg-slate-800' : 'bg-white'} border ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}>
-          {/* Search */}
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tasks... (/)"
-              className={`w-full pl-10 pr-4 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 focus:border-[#0033A0] ${
-                darkMode
-                  ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
-                  : 'bg-slate-50 border-slate-200 text-slate-700 placeholder-slate-400'
-              }`}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className={`absolute right-3 top-1/2 -translate-y-1/2 ${darkMode ? 'text-slate-400 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-
-          {/* Sort */}
-          <div className="flex items-center gap-2">
-            <ArrowUpDown className={`w-4 h-4 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
-            <select
-              value={sortOption}
-              onChange={(e) => setSortOption(e.target.value as SortOption)}
-              className={`px-3 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 focus:border-[#0033A0] ${
-                darkMode
-                  ? 'bg-slate-700 border-slate-600 text-white'
-                  : 'bg-slate-50 border-slate-200 text-slate-700'
-              }`}
-            >
-              <option value="created">Newest First</option>
-              <option value="due_date">Due Date</option>
-              <option value="priority">Priority</option>
-              <option value="alphabetical">A-Z</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Quick Filters */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          {[
-            { id: 'all' as QuickFilter, label: 'All Tasks', icon: LayoutList },
-            { id: 'my_tasks' as QuickFilter, label: 'My Tasks', icon: User },
-            { id: 'due_today' as QuickFilter, label: 'Due Today', icon: Calendar, count: stats.dueToday },
-            { id: 'overdue' as QuickFilter, label: 'Overdue', icon: AlertTriangle, count: stats.overdue },
-            { id: 'urgent' as QuickFilter, label: 'Urgent', icon: AlertTriangle },
-          ].map((f) => (
-            <button
-              key={f.id}
-              onClick={() => setQuickFilter(f.id)}
-              className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all ${
-                quickFilter === f.id
-                  ? 'bg-[#0033A0] text-white shadow-md'
-                  : darkMode
-                    ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
-                    : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
-              }`}
-            >
-              <f.icon className="w-4 h-4" />
-              {f.label}
-              {f.count !== undefined && f.count > 0 && (
-                <span className={`px-1.5 py-0.5 text-xs rounded-full ${
-                  quickFilter === f.id ? 'bg-white/20' : 'bg-red-100 text-red-600'
-                }`}>
-                  {f.count}
-                </span>
+        {/* Unified Filter Bar */}
+        <div className={`rounded-xl p-3 mb-4 ${darkMode ? 'bg-slate-800' : 'bg-white'} border ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+          {/* Search Row */}
+          <div className="flex gap-2 mb-3">
+            <div className="relative flex-1">
+              <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} aria-hidden="true" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search tasks..."
+                aria-label="Search tasks"
+                className={`w-full pl-10 pr-4 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 focus:border-[#0033A0] ${
+                  darkMode
+                    ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
+                    : 'bg-slate-50 border-slate-200 text-slate-700 placeholder-slate-400'
+                }`}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 ${darkMode ? 'text-slate-400 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
+                  aria-label="Clear search"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               )}
-            </button>
-          ))}
-        </div>
+            </div>
 
-        {/* Status Filter (list view only) */}
-        {viewMode === 'list' && (
-          <div className="flex gap-2 mb-6">
-            {(['all', 'active', 'completed'] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
-                  filter === f
-                    ? 'bg-[#0033A0] text-white shadow-md shadow-[#0033A0]/30'
-                    : darkMode
-                      ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
-                      : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+            {/* Sort dropdown */}
+            <div className="relative">
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value as SortOption)}
+                aria-label="Sort tasks"
+                className={`appearance-none pl-3 pr-8 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 focus:border-[#0033A0] ${
+                  darkMode
+                    ? 'bg-slate-700 border-slate-600 text-white'
+                    : 'bg-slate-50 border-slate-200 text-slate-700'
                 }`}
               >
-                {f.charAt(0).toUpperCase() + f.slice(1)}
+                <option value="created">Newest</option>
+                <option value="due_date">Due Date</option>
+                <option value="priority">Priority</option>
+                <option value="alphabetical">A-Z</option>
+              </select>
+              <ArrowUpDown className={`absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
+            </div>
+          </div>
+
+          {/* Filter Chips - Single Row */}
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { id: 'all' as QuickFilter, label: 'All', icon: LayoutList },
+              { id: 'my_tasks' as QuickFilter, label: 'My Tasks', icon: User },
+              { id: 'urgent' as QuickFilter, label: 'Urgent', icon: AlertTriangle },
+            ].map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setQuickFilter(f.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${
+                  quickFilter === f.id
+                    ? 'bg-[#0033A0] text-white'
+                    : darkMode
+                      ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+                aria-pressed={quickFilter === f.id}
+              >
+                <f.icon className="w-3.5 h-3.5" />
+                {f.label}
               </button>
             ))}
 
-            {/* Bulk selection toggle */}
+            <div className="w-px h-5 bg-slate-300 dark:bg-slate-600 mx-1" />
+
+            {/* Show completed toggle */}
+            <button
+              onClick={() => setShowCompleted(!showCompleted)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${
+                showCompleted
+                  ? 'bg-emerald-500 text-white'
+                  : darkMode
+                    ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+              aria-pressed={showCompleted}
+            >
+              <CheckSquare className="w-3.5 h-3.5" />
+              Done ({stats.completed})
+            </button>
+
+            {/* Active filter indicator */}
+            {quickFilter !== 'all' && (
+              <button
+                onClick={() => setQuickFilter('all')}
+                className="text-xs text-[#0033A0] hover:underline ml-auto"
+              >
+                Clear filter
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Bulk Actions - Always visible checkbox in list view */}
+        {viewMode === 'list' && (
+          <div className="flex items-center gap-2 mb-4">
             <button
               onClick={() => {
+                if (showBulkActions) {
+                  clearSelection();
+                }
                 setShowBulkActions(!showBulkActions);
-                if (showBulkActions) clearSelection();
               }}
-              className={`ml-auto px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${
                 showBulkActions
                   ? 'bg-[#D4A853] text-white'
                   : darkMode
@@ -892,69 +970,71 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
                     : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
               }`}
             >
-              <CheckSquare className="w-4 h-4 inline-block mr-2" />
-              Select
-            </button>
-          </div>
-        )}
-
-        {/* Bulk Actions Bar */}
-        {showBulkActions && selectedTodos.size > 0 && (
-          <div className={`flex items-center gap-3 mb-4 p-3 rounded-xl ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-[#0033A0]/10 border-[#0033A0]/20'} border`}>
-            <span className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-[#0033A0]'}`}>
-              {selectedTodos.size} selected
-            </span>
-            <button
-              onClick={selectAll}
-              className={`px-3 py-1.5 text-sm rounded-lg ${darkMode ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-white text-slate-700 hover:bg-slate-50'}`}
-            >
-              Select All
-            </button>
-            <button
-              onClick={clearSelection}
-              className={`px-3 py-1.5 text-sm rounded-lg ${darkMode ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-white text-slate-700 hover:bg-slate-50'}`}
-            >
-              Clear
-            </button>
-            <div className="flex-1" />
-            <button
-              onClick={bulkComplete}
-              className="px-3 py-1.5 text-sm rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 flex items-center gap-2"
-            >
               <CheckSquare className="w-4 h-4" />
-              Complete
+              {showBulkActions ? 'Cancel' : 'Select'}
             </button>
-            <select
-              onChange={(e) => { if (e.target.value) bulkAssign(e.target.value); e.target.value = ''; }}
-              className={`px-3 py-1.5 text-sm rounded-lg border ${darkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-200 text-slate-700'}`}
-            >
-              <option value="">Assign to...</option>
-              {users.map((user) => (
-                <option key={user} value={user}>{user}</option>
-              ))}
-            </select>
-            <button
-              onClick={bulkDelete}
-              className="px-3 py-1.5 text-sm rounded-lg bg-red-500 text-white hover:bg-red-600 flex items-center gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              Delete
-            </button>
+
+            {/* Bulk actions bar */}
+            {showBulkActions && selectedTodos.size > 0 && (
+              <div className="flex items-center gap-2 flex-1">
+                <span className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-slate-700'}`}>
+                  {selectedTodos.size} selected
+                </span>
+                <button
+                  onClick={selectAll}
+                  className={`px-2 py-1 text-xs rounded ${darkMode ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={clearSelection}
+                  className={`px-2 py-1 text-xs rounded ${darkMode ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                >
+                  Clear
+                </button>
+                <div className="flex-1" />
+                <button
+                  onClick={bulkComplete}
+                  className="px-3 py-1.5 text-sm rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 flex items-center gap-1.5"
+                >
+                  <CheckSquare className="w-4 h-4" />
+                  <span className="hidden sm:inline">Complete</span>
+                </button>
+                <div className="relative">
+                  <select
+                    onChange={(e) => { if (e.target.value) bulkAssign(e.target.value); e.target.value = ''; }}
+                    className={`appearance-none px-3 py-1.5 pr-8 text-sm rounded-lg border ${darkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-200 text-slate-700'}`}
+                    aria-label="Assign to"
+                  >
+                    <option value="">Assign...</option>
+                    {users.map((user) => (
+                      <option key={user} value={user}>{user}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" />
+                </div>
+                <button
+                  onClick={bulkDelete}
+                  className="px-3 py-1.5 text-sm rounded-lg bg-red-500 text-white hover:bg-red-600 flex items-center gap-1.5"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Delete</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
         {/* List or Kanban */}
         {viewMode === 'list' ? (
-          <div className="space-y-3">
+          <div className="space-y-2" role="list" aria-label="Task list">
             {filteredAndSortedTodos.length === 0 ? (
               <div className="text-center py-16">
-                <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 ${darkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                  <svg className={`w-10 h-10 ${darkMode ? 'text-slate-600' : 'text-slate-300'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
+                <div className={`w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 ${darkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                  <Calendar className={`w-8 h-8 ${darkMode ? 'text-slate-600' : 'text-slate-300'}`} />
                 </div>
                 <p className={`font-medium ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                  {searchQuery ? 'No tasks match your search' : filter === 'completed' ? 'No completed tasks yet' : 'No tasks yet'}
+                  {searchQuery ? 'No tasks match your search' : showCompleted && stats.completed === 0 ? 'No completed tasks yet' : 'No tasks to show'}
                 </p>
                 <p className={`text-sm mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
                   {searchQuery ? 'Try a different search term' : 'Add your first task above'}
@@ -966,10 +1046,11 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
                   key={todo.id}
                   todo={todo}
                   users={users}
+                  darkMode={darkMode}
                   selected={selectedTodos.has(todo.id)}
                   onSelect={showBulkActions ? handleSelectTodo : undefined}
                   onToggle={toggleTodo}
-                  onDelete={deleteTodo}
+                  onDelete={confirmDeleteTodo}
                   onAssign={assignTodo}
                   onSetDueDate={setDueDate}
                   onSetPriority={setPriority}
@@ -985,8 +1066,9 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
           <KanbanBoard
             todos={todos}
             users={users}
+            darkMode={darkMode}
             onStatusChange={updateStatus}
-            onDelete={deleteTodo}
+            onDelete={confirmDeleteTodo}
             onAssign={assignTodo}
             onSetDueDate={setDueDate}
             onSetPriority={setPriority}
@@ -994,13 +1076,13 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
         )}
 
         {/* Keyboard shortcuts hint */}
-        <div className="mt-8 text-center text-xs text-slate-500">
+        <div className={`mt-8 text-center text-xs ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
           <span className="hidden sm:inline">
-            Shortcuts: <kbd className="px-1.5 py-0.5 rounded bg-slate-800">N</kbd> new task
+            <kbd className={`px-1.5 py-0.5 rounded ${darkMode ? 'bg-slate-800' : 'bg-slate-200'}`}>N</kbd> new
             <span className="mx-2">|</span>
-            <kbd className="px-1.5 py-0.5 rounded bg-slate-800">/</kbd> search
+            <kbd className={`px-1.5 py-0.5 rounded ${darkMode ? 'bg-slate-800' : 'bg-slate-200'}`}>/</kbd> search
             <span className="mx-2">|</span>
-            <kbd className="px-1.5 py-0.5 rounded bg-slate-800">1-4</kbd> filters
+            <kbd className={`px-1.5 py-0.5 rounded ${darkMode ? 'bg-slate-800' : 'bg-slate-200'}`}>Esc</kbd> clear
           </span>
         </div>
       </main>
@@ -1026,6 +1108,15 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
         todos={todos}
         currentUser={currentUser}
         onUserUpdate={onUserChange}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmLabel="Delete"
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
       />
     </div>
   );

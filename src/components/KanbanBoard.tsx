@@ -36,6 +36,7 @@ import Celebration from './Celebration';
 interface KanbanBoardProps {
   todos: Todo[];
   users: string[];
+  darkMode?: boolean;
   onStatusChange: (id: string, status: TodoStatus) => void;
   onDelete: (id: string) => void;
   onAssign: (id: string, assignedTo: string | null) => void;
@@ -110,10 +111,10 @@ function SortableCard({ todo, users, onDelete, onAssign, onSetDueDate, onSetPrio
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: isDragging ? 0.5 : 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className={`group bg-white rounded-xl border-2 overflow-hidden transition-all cursor-grab active:cursor-grabbing ${
+      className={`group rounded-xl border-2 overflow-hidden transition-all cursor-grab active:cursor-grabbing bg-white dark:bg-slate-800 ${
         isDragging
           ? 'shadow-2xl ring-2 ring-[#0033A0] border-[#0033A0]'
-          : 'shadow-sm border-slate-100 hover:shadow-md hover:border-slate-200'
+          : 'shadow-sm border-slate-100 dark:border-slate-700 hover:shadow-md hover:border-slate-200 dark:hover:border-slate-600'
       }`}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
@@ -128,7 +129,7 @@ function SortableCard({ todo, users, onDelete, onAssign, onSetDueDate, onSetPrio
         {/* Card content */}
         <div className="flex-1 min-w-0">
           <p className={`text-sm font-medium leading-snug ${
-            todo.completed ? 'line-through text-slate-400' : 'text-slate-800'
+            todo.completed ? 'line-through text-slate-400' : 'text-slate-800 dark:text-white'
           }`}>
             {todo.text}
           </p>
@@ -167,9 +168,9 @@ function SortableCard({ todo, users, onDelete, onAssign, onSetDueDate, onSetPrio
                 {todo.assigned_to}
               </span>
             ) : (
-              <span className="text-xs text-slate-400">Unassigned</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">Unassigned</span>
             )}
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-400 dark:text-slate-500">
               by {todo.created_by}
             </span>
           </div>
@@ -182,7 +183,7 @@ function SortableCard({ todo, users, onDelete, onAssign, onSetDueDate, onSetPrio
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mt-3 pt-3 border-t border-slate-100"
+              className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700"
             >
               <div className="flex items-center gap-2">
                 <input
@@ -190,13 +191,13 @@ function SortableCard({ todo, users, onDelete, onAssign, onSetDueDate, onSetPrio
                   value={todo.due_date ? todo.due_date.split('T')[0] : ''}
                   onChange={(e) => onSetDueDate(todo.id, e.target.value || null)}
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 focus:border-[#0033A0]"
+                  className="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 focus:border-[#0033A0]"
                 />
                 <select
                   value={todo.assigned_to || ''}
                   onChange={(e) => onAssign(todo.id, e.target.value || null)}
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 focus:border-[#0033A0]"
+                  className="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 focus:border-[#0033A0]"
                 >
                   <option value="">Unassigned</option>
                   {users.map((user) => (
@@ -211,7 +212,8 @@ function SortableCard({ todo, users, onDelete, onAssign, onSetDueDate, onSetPrio
                   }}
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
-                  className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
+                  className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 text-slate-400 hover:text-red-500 transition-colors"
+                  aria-label="Delete task"
                 >
                   <Trash2 className="w-4 h-4" />
                 </motion.button>
@@ -240,7 +242,11 @@ function DroppableColumn({ id, children, color, isActive, isCurrentOver }: Dropp
     <div
       ref={setNodeRef}
       className={`flex-1 p-3 min-h-[250px] space-y-3 transition-all rounded-lg ${
-        showHighlight ? 'bg-slate-100' : isActive ? 'bg-slate-50' : 'bg-slate-50/50'
+        showHighlight
+          ? 'bg-slate-100 dark:bg-slate-800'
+          : isActive
+            ? 'bg-slate-50 dark:bg-slate-800/50'
+            : 'bg-slate-50/50 dark:bg-slate-800/30'
       }`}
       style={{
         borderLeft: showHighlight ? `4px solid ${color}` : isActive ? `4px solid ${color}40` : '4px solid transparent',
@@ -259,10 +265,10 @@ function KanbanCard({ todo }: { todo: Todo }) {
   const overdue = todo.due_date && !todo.completed && isOverdue(todo.due_date);
 
   return (
-    <div className="bg-white rounded-xl shadow-2xl border-2 border-[#0033A0] overflow-hidden ring-4 ring-[#0033A0]/20">
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl border-2 border-[#0033A0] overflow-hidden ring-4 ring-[#0033A0]/20">
       <div className="h-1.5" style={{ backgroundColor: priorityConfig.color }} />
       <div className="p-3">
-        <p className="text-sm font-medium text-slate-800">{todo.text}</p>
+        <p className="text-sm font-medium text-slate-800 dark:text-white">{todo.text}</p>
         <div className="flex items-center gap-1.5 mt-2">
           <span
             className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium"
@@ -274,7 +280,7 @@ function KanbanCard({ todo }: { todo: Todo }) {
           {todo.due_date && (
             <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium ${
               overdue
-                ? 'bg-red-100 text-red-600'
+                ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
                 : 'bg-[#0033A0]/10 text-[#0033A0]'
             }`}>
               <Clock className="w-2.5 h-2.5" />
@@ -290,6 +296,7 @@ function KanbanCard({ todo }: { todo: Todo }) {
 export default function KanbanBoard({
   todos,
   users,
+  darkMode = true,
   onStatusChange,
   onDelete,
   onAssign,
@@ -422,7 +429,7 @@ export default function KanbanBoard({
             <motion.div
               key={column.id}
               layout
-              className="flex flex-col bg-white rounded-2xl shadow-sm border-2 border-slate-100 overflow-hidden"
+              className="flex flex-col bg-white dark:bg-slate-900 rounded-2xl shadow-sm border-2 border-slate-100 dark:border-slate-700 overflow-hidden"
             >
               {/* Column header */}
               <div
@@ -431,7 +438,7 @@ export default function KanbanBoard({
               >
                 <div className="flex items-center gap-2">
                   <span className="text-lg">{column.icon}</span>
-                  <h3 className="font-semibold text-slate-800">
+                  <h3 className="font-semibold text-slate-800 dark:text-slate-100">
                     {column.title}
                   </h3>
                 </div>
@@ -467,7 +474,7 @@ export default function KanbanBoard({
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="flex flex-col items-center justify-center py-12 text-slate-400"
+                      className="flex flex-col items-center justify-center py-12 text-slate-400 dark:text-slate-500"
                     >
                       <div
                         className="w-12 h-12 rounded-xl flex items-center justify-center mb-3"

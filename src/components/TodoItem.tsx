@@ -106,6 +106,7 @@ function SubtaskItem({ subtask, onToggle, onDelete, onUpdate }: SubtaskItemProps
 interface TodoItemProps {
   todo: Todo;
   users: string[];
+  darkMode?: boolean;
   selected?: boolean;
   onSelect?: (id: string, selected: boolean) => void;
   onToggle: (id: string, completed: boolean) => void;
@@ -160,6 +161,7 @@ const dueDateStyles = {
 export default function TodoItem({
   todo,
   users,
+  darkMode = true,
   selected,
   onSelect,
   onToggle,
@@ -245,14 +247,19 @@ export default function TodoItem({
 
   return (
     <div
-      className={`group relative bg-white rounded-xl border-2 transition-all ${
+      role="listitem"
+      className={`group relative rounded-xl border-2 transition-all ${
+        darkMode ? 'bg-slate-800' : 'bg-white'
+      } ${
         todo.completed
-          ? 'border-slate-100 opacity-60'
+          ? darkMode ? 'border-slate-700 opacity-60' : 'border-slate-100 opacity-60'
           : dueDateStatus === 'overdue'
-            ? 'border-red-200 bg-red-50/30'
+            ? darkMode ? 'border-red-500/50 bg-red-900/20' : 'border-red-200 bg-red-50/30'
             : selected
               ? 'border-[#0033A0] bg-[#0033A0]/5'
-              : 'border-slate-100 hover:border-[#0033A0]/30 hover:shadow-md'
+              : darkMode
+                ? 'border-slate-700 hover:border-[#0033A0]/50 hover:shadow-md'
+                : 'border-slate-100 hover:border-[#0033A0]/30 hover:shadow-md'
       }`}
     >
       <Celebration trigger={celebrating} onComplete={() => setCelebrating(false)} />
@@ -284,7 +291,7 @@ export default function TodoItem({
           <p className={`font-medium cursor-pointer ${
             todo.completed
               ? 'text-slate-400 line-through'
-              : 'text-slate-800'
+              : darkMode ? 'text-white' : 'text-slate-800'
           }`}>
             {todo.text}
           </p>
@@ -350,10 +357,12 @@ export default function TodoItem({
               </span>
             )}
 
-            {/* Created by */}
-            <span className="text-xs text-slate-400">
-              by {todo.created_by}
-            </span>
+            {/* Created by - only show if different from assigned */}
+            {(!todo.assigned_to || todo.created_by !== todo.assigned_to) && (
+              <span className={`text-xs ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                by {todo.created_by}
+              </span>
+            )}
           </div>
         </div>
 
@@ -362,7 +371,11 @@ export default function TodoItem({
           {/* Expand/collapse */}
           <button
             onClick={() => setExpanded(!expanded)}
-            className="p-2 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all touch-manipulation"
+            className={`p-2 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center ${
+              darkMode ? 'hover:bg-slate-700 text-slate-400 hover:text-slate-200' : 'hover:bg-slate-100 text-slate-400 hover:text-slate-600'
+            }`}
+            aria-expanded={expanded}
+            aria-label={expanded ? 'Collapse task details' : 'Expand task details'}
           >
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
@@ -371,8 +384,10 @@ export default function TodoItem({
           {onDuplicate && (
             <button
               onClick={() => onDuplicate(todo)}
-              className="p-2 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all touch-manipulation"
-              title="Duplicate task"
+              className={`p-2 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                darkMode ? 'hover:bg-slate-700 text-slate-400 hover:text-slate-200' : 'hover:bg-slate-100 text-slate-400 hover:text-slate-600'
+              }`}
+              aria-label="Duplicate task"
             >
               <Copy className="w-4 h-4" />
             </button>
@@ -381,7 +396,10 @@ export default function TodoItem({
           {/* Delete button */}
           <button
             onClick={() => onDelete(todo.id)}
-            className="p-2 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-red-50 text-slate-400 hover:text-red-500 transition-all touch-manipulation"
+            className={`p-2 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center ${
+              darkMode ? 'hover:bg-red-900/50 text-slate-400 hover:text-red-400' : 'hover:bg-red-50 text-slate-400 hover:text-red-500'
+            }`}
+            aria-label="Delete task"
           >
             <Trash2 className="w-4 h-4" />
           </button>
