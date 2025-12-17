@@ -207,7 +207,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
     };
   }, [fetchTodos, userName, currentUser]);
 
-  const addTodo = async (text: string, priority: TodoPriority, dueDate?: string, assignedTo?: string) => {
+  const addTodo = async (text: string, priority: TodoPriority, dueDate?: string, assignedTo?: string, subtasks?: Subtask[]) => {
     const newTodo: Todo = {
       id: uuidv4(),
       text,
@@ -218,6 +218,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
       created_by: userName,
       due_date: dueDate,
       assigned_to: assignedTo,
+      subtasks: subtasks,
     };
 
     setTodos((prev) => [newTodo, ...prev]);
@@ -234,6 +235,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
     if (newTodo.priority && newTodo.priority !== 'medium') insertData.priority = newTodo.priority;
     if (newTodo.due_date) insertData.due_date = newTodo.due_date;
     if (newTodo.assigned_to) insertData.assigned_to = newTodo.assigned_to;
+    if (newTodo.subtasks && newTodo.subtasks.length > 0) insertData.subtasks = newTodo.subtasks;
 
     const { error: insertError } = await supabase.from('todos').insert([insertData]);
 
