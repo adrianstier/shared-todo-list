@@ -4,17 +4,37 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { Todo, TodoStatus, TodoPriority, ViewMode, SortOption, QuickFilter, RecurrencePattern, Subtask } from '@/types/todo';
 import TodoItem from './TodoItem';
+import SortableTodoItem from './SortableTodoItem';
 import AddTodo from './AddTodo';
 import KanbanBoard from './KanbanBoard';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import CelebrationEffect from './CelebrationEffect';
 import ProgressSummary from './ProgressSummary';
 import WelcomeBackNotification, { shouldShowWelcomeNotification } from './WelcomeBackNotification';
 import ConfirmDialog from './ConfirmDialog';
+import EmptyState from './EmptyState';
+import WeeklyProgressChart from './WeeklyProgressChart';
+import KeyboardShortcutsModal from './KeyboardShortcutsModal';
+import PullToRefresh from './PullToRefresh';
 import { v4 as uuidv4 } from 'uuid';
 import {
   LayoutList, LayoutGrid, Wifi, WifiOff, Search,
   ArrowUpDown, User, Calendar, AlertTriangle, CheckSquare,
-  Trash2, X, Sun, Moon, ChevronDown
+  Trash2, X, Sun, Moon, ChevronDown, BarChart2
 } from 'lucide-react';
 import { AuthUser } from '@/types/todo';
 import UserSwitcher from './UserSwitcher';
@@ -80,6 +100,21 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
   const [celebrationText, setCelebrationText] = useState('');
   const [showProgressSummary, setShowProgressSummary] = useState(false);
   const [showWelcomeBack, setShowWelcomeBack] = useState(false);
+  const [showWeeklyChart, setShowWeeklyChart] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [customOrder, setCustomOrder] = useState<string[]>([]);
+
+  // DnD sensors for drag-and-drop reordering
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Minimum drag distance before activating
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Confirm dialog state
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -123,6 +158,12 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
       if (e.key === '2') { e.preventDefault(); setQuickFilter('my_tasks'); }
       if (e.key === '3') { e.preventDefault(); setQuickFilter('due_today'); }
       if (e.key === '4') { e.preventDefault(); setQuickFilter('urgent'); }
+
+      // '?' - show keyboard shortcuts help
+      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+        e.preventDefault();
+        setShowShortcuts(true);
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -693,6 +734,20 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
       case 'alphabetical':
         result.sort((a, b) => a.text.localeCompare(b.text));
         break;
+      case 'custom':
+        // Sort by custom order if available
+        if (customOrder.length > 0) {
+          result.sort((a, b) => {
+            const aIndex = customOrder.indexOf(a.id);
+            const bIndex = customOrder.indexOf(b.id);
+            // Items not in custom order go to the end
+            if (aIndex === -1 && bIndex === -1) return 0;
+            if (aIndex === -1) return 1;
+            if (bIndex === -1) return -1;
+            return aIndex - bIndex;
+          });
+        }
+        break;
       case 'created':
       default:
         result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -700,7 +755,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
     }
 
     return result;
-  }, [visibleTodos, searchQuery, quickFilter, showCompleted, sortOption, userName]);
+  }, [visibleTodos, searchQuery, quickFilter, showCompleted, sortOption, userName, customOrder]);
 
   // Stats should be based on visible todos only
   const stats = {
@@ -709,6 +764,28 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
     active: visibleTodos.filter((t) => !t.completed).length,
     dueToday: visibleTodos.filter((t) => isDueToday(t.due_date) && !t.completed).length,
     overdue: visibleTodos.filter((t) => isOverdue(t.due_date, t.completed)).length,
+  };
+
+  // Handle drag end for manual reordering
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = filteredAndSortedTodos.findIndex((t) => t.id === active.id);
+      const newIndex = filteredAndSortedTodos.findIndex((t) => t.id === over.id);
+
+      const newOrder = arrayMove(
+        filteredAndSortedTodos.map((t) => t.id),
+        oldIndex,
+        newIndex
+      );
+
+      setCustomOrder(newOrder);
+      // Auto-switch to custom sort when reordering
+      if (sortOption !== 'custom') {
+        setSortOption('custom');
+      }
+    }
   };
 
   if (loading) {
@@ -735,14 +812,15 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
   }
 
   return (
-    <div className={`min-h-screen transition-colors ${darkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
-      {/* Skip link for accessibility */}
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:bg-white focus:px-4 focus:py-2 focus:rounded-lg focus:z-50">
-        Skip to main content
-      </a>
+    <PullToRefresh onRefresh={fetchTodos} darkMode={darkMode}>
+      <div className={`min-h-screen transition-colors ${darkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
+        {/* Skip link for accessibility */}
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:bg-white focus:px-4 focus:py-2 focus:rounded-lg focus:z-50">
+          Skip to main content
+        </a>
 
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-[#0033A0] shadow-lg">
+        {/* Header */}
+        <header className="sticky top-0 z-40 bg-[#0033A0] shadow-lg">
         <div className={`mx-auto px-4 sm:px-6 py-3 ${viewMode === 'kanban' ? 'max-w-6xl' : 'max-w-2xl'}`}>
           <div className="flex items-center justify-between gap-3">
             {/* Logo & Context Info */}
@@ -789,6 +867,15 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
                   <span className="hidden sm:inline">Board</span>
                 </button>
               </div>
+
+              {/* Weekly progress chart */}
+              <button
+                onClick={() => setShowWeeklyChart(true)}
+                className="p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                aria-label="View weekly progress"
+              >
+                <BarChart2 className="w-4 h-4" />
+              </button>
 
               {/* Theme toggle */}
               <button
@@ -858,7 +945,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
 
         {/* Add todo */}
         <div className="mb-6">
-          <AddTodo onAdd={addTodo} users={users} darkMode={darkMode} />
+          <AddTodo onAdd={addTodo} users={users} darkMode={darkMode} currentUserId={currentUser.id} />
         </div>
 
         {/* Unified Filter Bar */}
@@ -906,6 +993,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
                 <option value="due_date">Due Date</option>
                 <option value="priority">Priority</option>
                 <option value="alphabetical">A-Z</option>
+                <option value="custom">Manual</option>
               </select>
               <ArrowUpDown className={`absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
             </div>
@@ -1040,41 +1128,65 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
 
         {/* List or Kanban */}
         {viewMode === 'list' ? (
-          <div className="space-y-2" role="list" aria-label="Task list">
-            {filteredAndSortedTodos.length === 0 ? (
-              <div className="text-center py-16">
-                <div className={`w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 ${darkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                  <Calendar className={`w-8 h-8 ${darkMode ? 'text-slate-600' : 'text-slate-300'}`} />
-                </div>
-                <p className={`font-medium ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                  {searchQuery ? 'No tasks match your search' : showCompleted && stats.completed === 0 ? 'No completed tasks yet' : 'No tasks to show'}
-                </p>
-                <p className={`text-sm mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                  {searchQuery ? 'Try a different search term' : 'Add your first task above'}
-                </p>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={filteredAndSortedTodos.map((t) => t.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-2" role="list" aria-label="Task list">
+                {filteredAndSortedTodos.length === 0 ? (
+                  <EmptyState
+                    variant={
+                      searchQuery
+                        ? 'no-results'
+                        : quickFilter === 'due_today'
+                          ? 'no-due-today'
+                          : quickFilter === 'overdue'
+                            ? 'no-overdue'
+                            : stats.total === 0
+                              ? 'no-tasks'
+                              : stats.completed === stats.total && stats.total > 0
+                                ? 'all-done'
+                                : 'no-tasks'
+                    }
+                    darkMode={darkMode}
+                    searchQuery={searchQuery}
+                    onAddTask={() => {
+                      const input = document.querySelector('textarea[placeholder*="task"]') as HTMLTextAreaElement;
+                      if (input) input.focus();
+                    }}
+                    onClearSearch={() => setSearchQuery('')}
+                    userName={userName}
+                  />
+                ) : (
+                  filteredAndSortedTodos.map((todo) => (
+                    <SortableTodoItem
+                      key={todo.id}
+                      todo={todo}
+                      users={users}
+                      darkMode={darkMode}
+                      selected={selectedTodos.has(todo.id)}
+                      onSelect={showBulkActions ? handleSelectTodo : undefined}
+                      onToggle={toggleTodo}
+                      onDelete={confirmDeleteTodo}
+                      onAssign={assignTodo}
+                      onSetDueDate={setDueDate}
+                      onSetPriority={setPriority}
+                      onDuplicate={duplicateTodo}
+                      onUpdateNotes={updateNotes}
+                      onSetRecurrence={setRecurrence}
+                      onUpdateSubtasks={updateSubtasks}
+                      isDragEnabled={!showBulkActions && sortOption === 'custom'}
+                    />
+                  ))
+                )}
               </div>
-            ) : (
-              filteredAndSortedTodos.map((todo) => (
-                <TodoItem
-                  key={todo.id}
-                  todo={todo}
-                  users={users}
-                  darkMode={darkMode}
-                  selected={selectedTodos.has(todo.id)}
-                  onSelect={showBulkActions ? handleSelectTodo : undefined}
-                  onToggle={toggleTodo}
-                  onDelete={confirmDeleteTodo}
-                  onAssign={assignTodo}
-                  onSetDueDate={setDueDate}
-                  onSetPriority={setPriority}
-                  onDuplicate={duplicateTodo}
-                  onUpdateNotes={updateNotes}
-                  onSetRecurrence={setRecurrence}
-                  onUpdateSubtasks={updateSubtasks}
-                />
-              ))
-            )}
-          </div>
+            </SortableContext>
+          </DndContext>
         ) : (
           <KanbanBoard
             todos={visibleTodos}
@@ -1089,15 +1201,23 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
         )}
 
         {/* Keyboard shortcuts hint */}
-        <div className={`mt-8 text-center text-xs ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+        <button
+          onClick={() => setShowShortcuts(true)}
+          className={`mt-8 w-full text-center text-xs py-2 rounded-lg transition-colors ${
+            darkMode
+              ? 'text-slate-500 hover:text-slate-400 hover:bg-slate-800'
+              : 'text-slate-400 hover:text-slate-500 hover:bg-slate-100'
+          }`}
+        >
           <span className="hidden sm:inline">
             <kbd className={`px-1.5 py-0.5 rounded ${darkMode ? 'bg-slate-800' : 'bg-slate-200'}`}>N</kbd> new
             <span className="mx-2">|</span>
             <kbd className={`px-1.5 py-0.5 rounded ${darkMode ? 'bg-slate-800' : 'bg-slate-200'}`}>/</kbd> search
             <span className="mx-2">|</span>
-            <kbd className={`px-1.5 py-0.5 rounded ${darkMode ? 'bg-slate-800' : 'bg-slate-200'}`}>Esc</kbd> clear
+            <kbd className={`px-1.5 py-0.5 rounded ${darkMode ? 'bg-slate-800' : 'bg-slate-200'}`}>?</kbd> all shortcuts
           </span>
-        </div>
+          <span className="sm:hidden">Tap for keyboard shortcuts</span>
+        </button>
       </main>
 
       <CelebrationEffect
@@ -1131,6 +1251,20 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
         onConfirm={confirmDialog.onConfirm}
         onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
       />
-    </div>
+
+      <WeeklyProgressChart
+        todos={visibleTodos}
+        darkMode={darkMode}
+        show={showWeeklyChart}
+        onClose={() => setShowWeeklyChart(false)}
+      />
+
+      <KeyboardShortcutsModal
+        show={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+        darkMode={darkMode}
+      />
+      </div>
+    </PullToRefresh>
   );
 }

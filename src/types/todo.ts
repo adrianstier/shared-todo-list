@@ -29,7 +29,7 @@ export interface Todo {
   subtasks?: Subtask[];
 }
 
-export type SortOption = 'created' | 'due_date' | 'priority' | 'alphabetical';
+export type SortOption = 'created' | 'due_date' | 'priority' | 'alphabetical' | 'custom';
 export type QuickFilter = 'all' | 'my_tasks' | 'due_today' | 'overdue' | 'urgent';
 
 export type ViewMode = 'list' | 'kanban';

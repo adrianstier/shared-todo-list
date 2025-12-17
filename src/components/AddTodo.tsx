@@ -3,12 +3,15 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Plus, Calendar, Flag, User, Sparkles, Loader2, Mic, MicOff, ChevronDown } from 'lucide-react';
 import SmartParseModal from './SmartParseModal';
+import VoiceRecordingIndicator from './VoiceRecordingIndicator';
 import { TodoPriority, Subtask, PRIORITY_CONFIG } from '@/types/todo';
+import { getUserPreferences, updateLastTaskDefaults } from '@/lib/userPreferences';
 
 interface AddTodoProps {
   onAdd: (text: string, priority: TodoPriority, dueDate?: string, assignedTo?: string, subtasks?: Subtask[]) => void;
   users: string[];
   darkMode?: boolean;
+  currentUserId?: string;
 }
 
 interface SmartParseResult {
@@ -77,12 +80,25 @@ declare global {
   }
 }
 
-export default function AddTodo({ onAdd, users, darkMode = true }: AddTodoProps) {
+export default function AddTodo({ onAdd, users, darkMode = true, currentUserId }: AddTodoProps) {
   const [text, setText] = useState('');
   const [priority, setPriority] = useState<TodoPriority>('medium');
   const [dueDate, setDueDate] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
   const [showOptions, setShowOptions] = useState(false);
+
+  // Load user preferences on mount
+  useEffect(() => {
+    if (currentUserId) {
+      const prefs = getUserPreferences(currentUserId);
+      if (prefs.lastPriority) {
+        setPriority(prefs.lastPriority);
+      }
+      if (prefs.lastAssignedTo && users.includes(prefs.lastAssignedTo)) {
+        setAssignedTo(prefs.lastAssignedTo);
+      }
+    }
+  }, [currentUserId, users]);
 
   // AI modal state
   const [isProcessing, setIsProcessing] = useState(false);
@@ -202,6 +218,10 @@ export default function AddTodo({ onAdd, users, darkMode = true }: AddTodoProps)
     e.preventDefault();
     if (!text.trim()) return;
     onAdd(text.trim(), priority, dueDate || undefined, assignedTo || undefined);
+    // Save preferences for next time
+    if (currentUserId) {
+      updateLastTaskDefaults(currentUserId, priority, assignedTo || undefined);
+    }
     resetForm();
   };
 
@@ -249,6 +269,10 @@ export default function AddTodo({ onAdd, users, darkMode = true }: AddTodoProps)
     subtasks?: Subtask[]
   ) => {
     onAdd(taskText, taskPriority, taskDueDate, taskAssignedTo, subtasks);
+    // Save preferences for next time
+    if (currentUserId) {
+      updateLastTaskDefaults(currentUserId, taskPriority, taskAssignedTo);
+    }
     setShowModal(false);
     resetForm();
   };
@@ -273,6 +297,10 @@ export default function AddTodo({ onAdd, users, darkMode = true }: AddTodoProps)
       e.preventDefault();
       if (text.trim() && !isProcessing) {
         onAdd(text.trim(), priority, dueDate || undefined, assignedTo || undefined);
+        // Save preferences for next time
+        if (currentUserId) {
+          updateLastTaskDefaults(currentUserId, priority, assignedTo || undefined);
+        }
         resetForm();
       }
     }
@@ -298,7 +326,7 @@ export default function AddTodo({ onAdd, users, darkMode = true }: AddTodoProps)
                 onChange={(e) => setText(e.target.value)}
                 onFocus={() => setShowOptions(true)}
                 onKeyDown={handleKeyDown}
-                placeholder={isRecording ? "Listening... speak your task" : "Add a task... (paste text for AI help)"}
+                placeholder={isRecording ? "Speak your task..." : "Add a task... (paste text for AI help)"}
                 rows={1}
                 disabled={isProcessing}
                 aria-label="New task description"
@@ -306,14 +334,9 @@ export default function AddTodo({ onAdd, users, darkMode = true }: AddTodoProps)
                   darkMode
                     ? 'bg-slate-700 text-white placeholder-slate-400 border-slate-600'
                     : 'bg-slate-50 text-slate-800 placeholder-slate-400 border-slate-200'
-                }`}
+                } ${isRecording ? 'border-red-500 ring-2 ring-red-500/20' : ''}`}
                 style={{ maxHeight: '120px' }}
               />
-              {isRecording && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-                </div>
-              )}
             </div>
 
             {/* Action buttons */}
@@ -375,6 +398,13 @@ export default function AddTodo({ onAdd, users, darkMode = true }: AddTodoProps)
             </div>
           </div>
         </div>
+
+        {/* Voice recording indicator */}
+        {isRecording && (
+          <div className="px-3 pb-2 flex justify-center">
+            <VoiceRecordingIndicator isRecording={isRecording} darkMode={darkMode} />
+          </div>
+        )}
 
         {/* Options row - visible when focused or has content */}
         {(showOptions || text) && (
