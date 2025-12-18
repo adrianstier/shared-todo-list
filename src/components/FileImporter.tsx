@@ -6,6 +6,7 @@ import {
   Loader2,
   Check,
   FileAudio,
+  FileText,
   Sparkles,
   Trash2,
   Flag,
@@ -19,6 +20,7 @@ import {
   Calendar,
   User,
   AlertCircle,
+  File,
 } from 'lucide-react';
 import { Subtask, TodoPriority, PRIORITY_CONFIG } from '@/types/todo';
 import { v4 as uuidv4 } from 'uuid';
@@ -30,7 +32,7 @@ interface ParsedSubtask {
   selected: boolean;
 }
 
-interface VoicemailImporterProps {
+interface FileImporterProps {
   onClose: () => void;
   onCreateTask: (
     text: string,
@@ -42,25 +44,56 @@ interface VoicemailImporterProps {
   users: string[];
 }
 
-type ProcessingStatus = 'idle' | 'uploading' | 'transcribing' | 'parsing' | 'ready' | 'error';
+type FileType = 'audio' | 'pdf' | 'image' | 'unknown';
+type ProcessingStatus = 'idle' | 'uploading' | 'processing' | 'parsing' | 'ready' | 'error';
 
-export default function VoicemailImporter({
+function getFileType(file: File): FileType {
+  const name = file.name.toLowerCase();
+  const type = file.type;
+
+  if (type.startsWith('audio/') || name.match(/\.(mp3|wav|m4a|ogg|webm|aac|flac)$/)) {
+    return 'audio';
+  }
+  if (type === 'application/pdf' || name.endsWith('.pdf')) {
+    return 'pdf';
+  }
+  if (type.startsWith('image/') || name.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+    return 'image';
+  }
+  return 'unknown';
+}
+
+function getFileIcon(fileType: FileType) {
+  switch (fileType) {
+    case 'audio':
+      return FileAudio;
+    case 'pdf':
+    case 'image':
+      return FileText;
+    default:
+      return File;
+  }
+}
+
+export default function FileImporter({
   onClose,
   onCreateTask,
   users,
-}: VoicemailImporterProps) {
-  // File and audio state
+}: FileImporterProps) {
+  // File state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileType, setFileType] = useState<FileType>('unknown');
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Processing state
   const [status, setStatus] = useState<ProcessingStatus>('idle');
   const [error, setError] = useState('');
-  const [transcription, setTranscription] = useState('');
-  const [showFullTranscript, setShowFullTranscript] = useState(false);
+  const [extractedText, setExtractedText] = useState('');
+  const [showFullText, setShowFullText] = useState(false);
 
   // Parsed task state
   const [mainTask, setMainTask] = useState({
@@ -73,13 +106,11 @@ export default function VoicemailImporter({
   const [summary, setSummary] = useState('');
 
   // Handle file selection
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileSelect = (file: File) => {
+    const type = getFileType(file);
 
-    // Validate file type
-    if (!file.type.startsWith('audio/') && !file.name.match(/\.(mp3|wav|m4a|ogg|webm|aac|flac)$/i)) {
-      setError('Please select an audio file (MP3, WAV, M4A, etc.)');
+    if (type === 'unknown') {
+      setError('Please select an audio file (MP3, WAV, etc.), PDF, or image');
       return;
     }
 
@@ -90,12 +121,21 @@ export default function VoicemailImporter({
     }
 
     setSelectedFile(file);
+    setFileType(type);
     setError('');
 
-    // Create audio URL for playback
-    const url = URL.createObjectURL(file);
-    setAudioUrl(url);
+    // Create audio URL for playback if audio file
+    if (type === 'audio') {
+      const url = URL.createObjectURL(file);
+      setAudioUrl(url);
+    }
+  };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
     // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -103,17 +143,22 @@ export default function VoicemailImporter({
   };
 
   // Handle drag and drop
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    setIsDragging(false);
     const file = e.dataTransfer.files[0];
     if (file) {
-      const input = fileInputRef.current;
-      if (input) {
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
-        input.files = dataTransfer.files;
-        handleFileSelect({ target: input } as React.ChangeEvent<HTMLInputElement>);
-      }
+      handleFileSelect(file);
     }
   };
 
@@ -129,116 +174,156 @@ export default function VoicemailImporter({
     setIsPlaying(!isPlaying);
   };
 
-  // Process the voicemail - transcribe and parse for tasks
-  const processVoicemail = async () => {
+  // Process the file - different paths for audio vs PDF/image
+  const processFile = async () => {
     if (!selectedFile) return;
 
-    setStatus('transcribing');
+    setStatus('processing');
     setError('');
 
     try {
-      // First: Transcribe the audio
-      const formData = new FormData();
-      formData.append('audio', selectedFile);
-      formData.append('users', JSON.stringify(users));
+      if (fileType === 'audio') {
+        // Audio: Transcribe first, then parse
+        const formData = new FormData();
+        formData.append('audio', selectedFile);
+        formData.append('users', JSON.stringify(users));
 
-      const response = await fetch('/api/ai/transcribe', {
-        method: 'POST',
-        body: formData,
-      });
+        const response = await fetch('/api/ai/transcribe', {
+          method: 'POST',
+          body: formData,
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to process audio');
-      }
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to transcribe audio');
+        }
 
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to process audio');
-      }
+        const data = await response.json();
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to transcribe audio');
+        }
 
-      const transcript = data.text || '';
-      setTranscription(transcript);
+        const transcript = data.text || '';
+        setExtractedText(transcript);
 
-      // Now parse the transcript with smart-parse to get main task + subtasks
-      setStatus('parsing');
+        // Parse the transcript
+        setStatus('parsing');
+        const parseResponse = await fetch('/api/ai/smart-parse', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: transcript, users }),
+        });
 
-      const parseResponse = await fetch('/api/ai/smart-parse', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: transcript,
-          users,
-        }),
-      });
-
-      if (parseResponse.ok) {
-        const parseData = await parseResponse.json();
-        if (parseData.success && parseData.result) {
-          const result = parseData.result;
-
-          // Set main task
-          setMainTask({
-            text: result.mainTask.text || transcript.slice(0, 200),
-            priority: result.mainTask.priority || 'medium',
-            dueDate: result.mainTask.dueDate || '',
-            assignedTo: result.mainTask.assignedTo || '',
-          });
-
-          // Set subtasks
-          if (result.subtasks && result.subtasks.length > 0) {
-            const parsedSubtasks: ParsedSubtask[] = result.subtasks.map((st: {
-              text: string;
-              priority: string;
-              estimatedMinutes?: number;
-            }) => ({
-              text: st.text,
-              priority: st.priority as TodoPriority,
-              estimatedMinutes: st.estimatedMinutes,
-              selected: true,
-            }));
-            setSubtasks(parsedSubtasks);
+        if (parseResponse.ok) {
+          const parseData = await parseResponse.json();
+          if (parseData.success && parseData.result) {
+            applyParseResult(parseData.result, transcript);
+          } else {
+            // Fallback
+            setMainTask({
+              text: transcript.slice(0, 200),
+              priority: 'medium',
+              dueDate: '',
+              assignedTo: '',
+            });
           }
-
-          setSummary(result.summary || '');
         }
       } else {
-        // Fallback: use transcription as task text if parsing fails
-        setMainTask({
-          text: transcript.slice(0, 200),
-          priority: 'medium',
-          dueDate: '',
-          assignedTo: '',
+        // PDF/Image: Use vision API to read and parse
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('users', JSON.stringify(users));
+
+        const response = await fetch('/api/ai/parse-file', {
+          method: 'POST',
+          body: formData,
         });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to process file');
+        }
+
+        const data = await response.json();
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to process file');
+        }
+
+        setExtractedText(data.extractedText || '');
+        setSummary(data.documentSummary || '');
+
+        // Apply parsed results
+        setMainTask({
+          text: data.mainTask?.text || '',
+          priority: data.mainTask?.priority || 'medium',
+          dueDate: data.mainTask?.dueDate || '',
+          assignedTo: data.mainTask?.assignedTo || '',
+        });
+
+        if (data.subtasks && data.subtasks.length > 0) {
+          const parsedSubtasks: ParsedSubtask[] = data.subtasks.map((st: {
+            text: string;
+            priority: string;
+            estimatedMinutes?: number;
+          }) => ({
+            text: st.text,
+            priority: st.priority as TodoPriority,
+            estimatedMinutes: st.estimatedMinutes,
+            selected: true,
+          }));
+          setSubtasks(parsedSubtasks);
+        }
       }
 
       setStatus('ready');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to process audio');
+      setError(err instanceof Error ? err.message : 'Failed to process file');
       setStatus('error');
     }
   };
 
-  // Toggle subtask selection
+  const applyParseResult = (result: {
+    mainTask: { text: string; priority: string; dueDate: string; assignedTo: string };
+    subtasks: { text: string; priority: string; estimatedMinutes?: number }[];
+    summary?: string;
+  }, fallbackText: string) => {
+    setMainTask({
+      text: result.mainTask.text || fallbackText.slice(0, 200),
+      priority: (result.mainTask.priority as TodoPriority) || 'medium',
+      dueDate: result.mainTask.dueDate || '',
+      assignedTo: result.mainTask.assignedTo || '',
+    });
+
+    if (result.subtasks && result.subtasks.length > 0) {
+      const parsedSubtasks: ParsedSubtask[] = result.subtasks.map((st) => ({
+        text: st.text,
+        priority: st.priority as TodoPriority,
+        estimatedMinutes: st.estimatedMinutes,
+        selected: true,
+      }));
+      setSubtasks(parsedSubtasks);
+    }
+
+    setSummary(result.summary || '');
+  };
+
+  // Subtask management
   const toggleSubtask = (index: number) => {
     setSubtasks(prev => prev.map((st, i) =>
       i === index ? { ...st, selected: !st.selected } : st
     ));
   };
 
-  // Update subtask
   const updateSubtask = (index: number, updates: Partial<ParsedSubtask>) => {
     setSubtasks(prev => prev.map((st, i) =>
       i === index ? { ...st, ...updates } : st
     ));
   };
 
-  // Remove subtask
   const removeSubtask = (index: number) => {
     setSubtasks(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Add new subtask
   const addSubtask = () => {
     setSubtasks(prev => [...prev, {
       text: '',
@@ -278,11 +363,12 @@ export default function VoicemailImporter({
   // Clear and start over
   const handleClear = () => {
     setSelectedFile(null);
+    setFileType('unknown');
     if (audioUrl) {
       URL.revokeObjectURL(audioUrl);
     }
     setAudioUrl(null);
-    setTranscription('');
+    setExtractedText('');
     setMainTask({ text: '', priority: 'medium', dueDate: '', assignedTo: '' });
     setSubtasks([]);
     setSummary('');
@@ -292,6 +378,21 @@ export default function VoicemailImporter({
 
   const totalSelected = subtasks.filter(st => st.selected).length;
   const priorityConfig = PRIORITY_CONFIG[mainTask.priority];
+  const FileIcon = getFileIcon(fileType);
+
+  const getProcessingText = () => {
+    if (fileType === 'audio') {
+      return status === 'processing' ? 'Transcribing audio...' : 'Extracting tasks...';
+    }
+    return status === 'processing' ? 'Reading document...' : 'Extracting tasks...';
+  };
+
+  const getButtonText = () => {
+    if (fileType === 'audio') {
+      return 'Transcribe & Extract Tasks';
+    }
+    return 'Read & Extract Tasks';
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -300,11 +401,13 @@ export default function VoicemailImporter({
         <div className="p-4 border-b border-slate-200 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-              <FileAudio className="w-5 h-5 text-purple-600" />
+              <FileIcon className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-slate-800">Import Voicemail</h2>
-              <p className="text-sm text-slate-500">Upload audio to create a task with subtasks</p>
+              <h2 className="text-lg font-semibold text-slate-800">Import File</h2>
+              <p className="text-sm text-slate-500">
+                Upload a voicemail, PDF, or image to create a task
+              </p>
             </div>
           </div>
           <button
@@ -322,22 +425,42 @@ export default function VoicemailImporter({
           {status === 'idle' && !selectedFile && (
             <div
               onClick={() => fileInputRef.current?.click()}
-              onDragOver={(e) => e.preventDefault()}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center
-                       hover:border-purple-400 hover:bg-purple-50/50 transition-all cursor-pointer"
+              className={`border-2 border-dashed rounded-xl p-12 text-center transition-all cursor-pointer
+                ${isDragging
+                  ? 'border-purple-500 bg-purple-50'
+                  : 'border-slate-300 hover:border-purple-400 hover:bg-purple-50/50'
+                }`}
             >
-              <Upload className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-              <p className="font-medium text-slate-700 text-lg">Drop your voicemail here</p>
+              <Upload className={`w-12 h-12 mx-auto mb-4 transition-colors ${isDragging ? 'text-purple-500' : 'text-slate-400'}`} />
+              <p className="font-medium text-slate-700 text-lg">
+                {isDragging ? 'Drop your file here' : 'Drop your file here'}
+              </p>
               <p className="text-slate-500 mt-2">or click to browse</p>
-              <p className="text-sm text-slate-400 mt-4">
-                Supports MP3, WAV, M4A, OGG, WebM, FLAC (max 25MB)
+              <div className="flex flex-wrap gap-2 justify-center mt-4">
+                <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm flex items-center gap-1">
+                  <FileAudio className="w-4 h-4" />
+                  Audio
+                </span>
+                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm flex items-center gap-1">
+                  <FileText className="w-4 h-4" />
+                  PDF
+                </span>
+                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm flex items-center gap-1">
+                  <File className="w-4 h-4" />
+                  Image
+                </span>
+              </div>
+              <p className="text-sm text-slate-400 mt-3">
+                Max 25MB
               </p>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="audio/*"
-                onChange={handleFileSelect}
+                accept="audio/*,.pdf,image/*"
+                onChange={handleInputChange}
                 className="hidden"
               />
             </div>
@@ -346,20 +469,28 @@ export default function VoicemailImporter({
           {/* File selected - show preview and process button */}
           {status === 'idle' && selectedFile && (
             <div className="space-y-4">
-              {/* Audio player */}
+              {/* File preview */}
               <div className="p-4 bg-slate-50 rounded-xl">
                 <div className="flex items-center gap-4">
-                  <button
-                    onClick={togglePlayback}
-                    className="w-12 h-12 rounded-full bg-purple-500 hover:bg-purple-600
-                             text-white flex items-center justify-center transition-colors"
-                  >
-                    {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
-                  </button>
+                  {fileType === 'audio' ? (
+                    <button
+                      onClick={togglePlayback}
+                      className="w-12 h-12 rounded-full bg-purple-500 hover:bg-purple-600
+                               text-white flex items-center justify-center transition-colors"
+                    >
+                      {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+                    </button>
+                  ) : (
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center
+                                  ${fileType === 'pdf' ? 'bg-red-100' : 'bg-blue-100'}`}>
+                      <FileIcon className={`w-6 h-6 ${fileType === 'pdf' ? 'text-red-600' : 'text-blue-600'}`} />
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-slate-700 truncate">{selectedFile.name}</p>
                     <p className="text-sm text-slate-500">
-                      {(selectedFile.size / 1024 / 1024).toFixed(1)} MB
+                      {(selectedFile.size / 1024 / 1024).toFixed(1)} MB •{' '}
+                      {fileType === 'audio' ? 'Audio' : fileType === 'pdf' ? 'PDF' : 'Image'}
                     </p>
                   </div>
                   <button
@@ -382,23 +513,21 @@ export default function VoicemailImporter({
 
               {/* Process button */}
               <button
-                onClick={processVoicemail}
+                onClick={processFile}
                 className="w-full py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-xl
                          font-medium transition-colors flex items-center justify-center gap-2 text-lg"
               >
                 <Sparkles className="w-5 h-5" />
-                Transcribe & Extract Tasks
+                {getButtonText()}
               </button>
             </div>
           )}
 
           {/* Processing state */}
-          {(status === 'uploading' || status === 'transcribing' || status === 'parsing') && (
+          {(status === 'processing' || status === 'parsing') && (
             <div className="p-8 text-center">
               <Loader2 className="w-12 h-12 text-purple-500 animate-spin mx-auto mb-4" />
-              <p className="font-medium text-slate-700 text-lg">
-                {status === 'transcribing' ? 'Transcribing audio...' : 'Extracting tasks...'}
-              </p>
+              <p className="font-medium text-slate-700 text-lg">{getProcessingText()}</p>
               <p className="text-sm text-slate-500 mt-2">This may take a moment</p>
             </div>
           )}
@@ -409,7 +538,7 @@ export default function VoicemailImporter({
               <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-red-700">Error processing voicemail</p>
+                  <p className="font-medium text-red-700">Error processing file</p>
                   <p className="text-sm text-red-600 mt-1">{error}</p>
                 </div>
               </div>
@@ -426,21 +555,23 @@ export default function VoicemailImporter({
           {/* Results view */}
           {status === 'ready' && (
             <div className="space-y-6">
-              {/* Transcript section */}
-              {transcription && (
+              {/* Extracted text/transcript section */}
+              {extractedText && (
                 <div className="p-4 bg-slate-50 rounded-xl">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-slate-600">Transcript</p>
+                    <p className="text-sm font-medium text-slate-600">
+                      {fileType === 'audio' ? 'Transcript' : 'Extracted Content'}
+                    </p>
                     <button
-                      onClick={() => setShowFullTranscript(!showFullTranscript)}
+                      onClick={() => setShowFullText(!showFullText)}
                       className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
                     >
-                      {showFullTranscript ? 'Show less' : 'Show more'}
-                      {showFullTranscript ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      {showFullText ? 'Show less' : 'Show more'}
+                      {showFullText ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </button>
                   </div>
-                  <p className={`text-sm text-slate-600 italic ${showFullTranscript ? '' : 'line-clamp-3'}`}>
-                    &ldquo;{transcription}&rdquo;
+                  <p className={`text-sm text-slate-600 italic ${showFullText ? '' : 'line-clamp-3'}`}>
+                    &ldquo;{extractedText}&rdquo;
                   </p>
                 </div>
               )}
@@ -456,7 +587,6 @@ export default function VoicemailImporter({
               <div className="space-y-4">
                 <h3 className="font-medium text-slate-800">Main Task</h3>
 
-                {/* Task text */}
                 <input
                   type="text"
                   value={mainTask.text}
@@ -466,7 +596,6 @@ export default function VoicemailImporter({
                            focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400"
                 />
 
-                {/* Task options */}
                 <div className="flex flex-wrap gap-3">
                   {/* Priority */}
                   <div className="relative">
@@ -549,7 +678,6 @@ export default function VoicemailImporter({
                         }`}
                       >
                         <div className="flex items-start gap-3">
-                          {/* Checkbox */}
                           <button
                             onClick={() => toggleSubtask(index)}
                             className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
@@ -562,7 +690,6 @@ export default function VoicemailImporter({
                           </button>
 
                           <div className="flex-1 min-w-0">
-                            {/* Subtask text */}
                             <input
                               type="text"
                               value={subtask.text}
@@ -572,7 +699,6 @@ export default function VoicemailImporter({
                                        focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400"
                             />
 
-                            {/* Options row */}
                             <div className="flex items-center gap-3 mt-2 flex-wrap">
                               <div className="flex items-center gap-1">
                                 <Flag className="w-3 h-3 text-slate-400" />
@@ -598,7 +724,6 @@ export default function VoicemailImporter({
                             </div>
                           </div>
 
-                          {/* Remove button */}
                           <button
                             onClick={() => removeSubtask(index)}
                             className="p-1 text-slate-400 hover:text-red-500 transition-colors"

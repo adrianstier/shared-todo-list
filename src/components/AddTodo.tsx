@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Plus, Calendar, Flag, User, Sparkles, Loader2, Mic, MicOff, ChevronDown, FileAudio } from 'lucide-react';
+import { Plus, Calendar, Flag, User, Sparkles, Loader2, Mic, MicOff, ChevronDown, Upload } from 'lucide-react';
 import SmartParseModal from './SmartParseModal';
 import VoiceRecordingIndicator from './VoiceRecordingIndicator';
-import VoicemailImporter from './VoicemailImporter';
+import FileImporter from './FileImporter';
 import { TodoPriority, Subtask, PRIORITY_CONFIG } from '@/types/todo';
 import { getUserPreferences, updateLastTaskDefaults } from '@/lib/userPreferences';
 
@@ -106,8 +106,8 @@ export default function AddTodo({ onAdd, users, darkMode = true, currentUserId }
   const [showModal, setShowModal] = useState(false);
   const [parsedResult, setParsedResult] = useState<SmartParseResult | null>(null);
 
-  // Voicemail importer state
-  const [showVoicemailImporter, setShowVoicemailImporter] = useState(false);
+  // File importer state
+  const [showFileImporter, setShowFileImporter] = useState(false);
 
   // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -345,20 +345,20 @@ export default function AddTodo({ onAdd, users, darkMode = true, currentUserId }
 
             {/* Action buttons */}
             <div className="flex gap-1.5 flex-shrink-0">
-              {/* Voicemail upload button */}
+              {/* File import button (voicemail, PDF, image) */}
               <button
                 type="button"
-                onClick={() => setShowVoicemailImporter(true)}
+                onClick={() => setShowFileImporter(true)}
                 disabled={isProcessing}
                 className={`p-2.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation ${
                   darkMode
                     ? 'bg-slate-700 text-purple-400 hover:bg-slate-600 active:bg-slate-500'
                     : 'bg-purple-50 text-purple-600 hover:bg-purple-100 active:bg-purple-200'
                 } disabled:opacity-50`}
-                aria-label="Upload voicemail"
-                title="Upload voicemail to create task"
+                aria-label="Import file"
+                title="Import voicemail, PDF, or image to create task"
               >
-                <FileAudio className="w-5 h-5" />
+                <Upload className="w-5 h-5" />
               </button>
 
               {/* Voice input - only show if supported */}
@@ -522,13 +522,13 @@ export default function AddTodo({ onAdd, users, darkMode = true, currentUserId }
         </div>
       )}
 
-      {/* Voicemail Importer Modal */}
-      {showVoicemailImporter && (
-        <VoicemailImporter
-          onClose={() => setShowVoicemailImporter(false)}
+      {/* File Importer Modal (voicemail, PDF, image) */}
+      {showFileImporter && (
+        <FileImporter
+          onClose={() => setShowFileImporter(false)}
           onCreateTask={(text, priority, dueDate, assignedTo, subtasks) => {
             onAdd(text, priority, dueDate, assignedTo, subtasks);
-            setShowVoicemailImporter(false);
+            setShowFileImporter(false);
           }}
           users={users}
         />
