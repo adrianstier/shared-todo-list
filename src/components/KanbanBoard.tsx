@@ -28,9 +28,15 @@ import {
   User,
   Trash2,
   Clock,
-  AlertCircle
+  AlertCircle,
+  X,
+  FileText,
+  Edit3,
+  CheckSquare,
+  Square,
+  Plus
 } from 'lucide-react';
-import { Todo, TodoStatus, TodoPriority, PRIORITY_CONFIG } from '@/types/todo';
+import { Todo, TodoStatus, TodoPriority, PRIORITY_CONFIG, Subtask } from '@/types/todo';
 import Celebration from './Celebration';
 
 interface KanbanBoardProps {
@@ -42,6 +48,9 @@ interface KanbanBoardProps {
   onAssign: (id: string, assignedTo: string | null) => void;
   onSetDueDate: (id: string, dueDate: string | null) => void;
   onSetPriority: (id: string, priority: TodoPriority) => void;
+  onUpdateNotes?: (id: string, notes: string) => void;
+  onUpdateText?: (id: string, text: string) => void;
+  onUpdateSubtasks?: (id: string, subtasks: Subtask[]) => void;
 }
 
 const columns: { id: TodoStatus; title: string; icon: string; color: string; bgColor: string }[] = [
@@ -79,9 +88,10 @@ interface SortableCardProps {
   onAssign: (id: string, assignedTo: string | null) => void;
   onSetDueDate: (id: string, dueDate: string | null) => void;
   onSetPriority: (id: string, priority: TodoPriority) => void;
+  onCardClick: (todo: Todo) => void;
 }
 
-function SortableCard({ todo, users, onDelete, onAssign, onSetDueDate, onSetPriority }: SortableCardProps) {
+function SortableCard({ todo, users, onDelete, onAssign, onSetDueDate, onSetPriority, onCardClick }: SortableCardProps) {
   const [showActions, setShowActions] = useState(false);
   const {
     attributes,
@@ -100,10 +110,17 @@ function SortableCard({ todo, users, onDelete, onAssign, onSetDueDate, onSetPrio
   const priority = todo.priority || 'medium';
   const priorityConfig = PRIORITY_CONFIG[priority];
   const overdue = todo.due_date && !todo.completed && isOverdue(todo.due_date);
+  const hasNotes = todo.notes && todo.notes.trim().length > 0;
+  const subtaskCount = todo.subtasks?.length || 0;
+  const completedSubtasks = todo.subtasks?.filter(s => s.completed).length || 0;
 
-  // Toggle actions on tap for mobile
-  const handleTap = () => {
-    setShowActions(!showActions);
+  // Handle click to open detail modal (not during drag)
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't open modal if clicking on action buttons
+    if ((e.target as HTMLElement).closest('button, input, select')) {
+      return;
+    }
+    onCardClick(todo);
   };
 
   return (
@@ -123,7 +140,7 @@ function SortableCard({ todo, users, onDelete, onAssign, onSetDueDate, onSetPrio
       }`}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
-      onTouchEnd={handleTap}
+      onClick={handleCardClick}
     >
       {/* Priority bar */}
       <div
@@ -166,6 +183,24 @@ function SortableCard({ todo, users, onDelete, onAssign, onSetDueDate, onSetPrio
             )}
           </div>
 
+          {/* Notes & Subtasks indicators */}
+          {(hasNotes || subtaskCount > 0) && (
+            <div className="flex items-center gap-2 mt-2">
+              {hasNotes && (
+                <span className="inline-flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
+                  <FileText className="w-3 h-3" />
+                  Notes
+                </span>
+              )}
+              {subtaskCount > 0 && (
+                <span className="inline-flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
+                  <CheckSquare className="w-3 h-3" />
+                  {completedSubtasks}/{subtaskCount}
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Assignee & Creator */}
           <div className="flex items-center justify-between mt-2">
             {todo.assigned_to ? (
@@ -176,9 +211,12 @@ function SortableCard({ todo, users, onDelete, onAssign, onSetDueDate, onSetPrio
             ) : (
               <span className="text-xs text-slate-400 dark:text-slate-500">Unassigned</span>
             )}
-            <span className="text-xs text-slate-400 dark:text-slate-500">
-              by {todo.created_by}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400 dark:text-slate-500">
+                by {todo.created_by}
+              </span>
+              <Edit3 className="w-3 h-3 text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
           </div>
         </div>
 
@@ -299,6 +337,371 @@ function KanbanCard({ todo }: { todo: Todo }) {
   );
 }
 
+// Task Detail Modal Component
+interface TaskDetailModalProps {
+  todo: Todo;
+  users: string[];
+  darkMode?: boolean;
+  onClose: () => void;
+  onDelete: (id: string) => void;
+  onAssign: (id: string, assignedTo: string | null) => void;
+  onSetDueDate: (id: string, dueDate: string | null) => void;
+  onSetPriority: (id: string, priority: TodoPriority) => void;
+  onStatusChange: (id: string, status: TodoStatus) => void;
+  onUpdateNotes?: (id: string, notes: string) => void;
+  onUpdateText?: (id: string, text: string) => void;
+  onUpdateSubtasks?: (id: string, subtasks: Subtask[]) => void;
+}
+
+function TaskDetailModal({
+  todo,
+  users,
+  darkMode,
+  onClose,
+  onDelete,
+  onAssign,
+  onSetDueDate,
+  onSetPriority,
+  onStatusChange,
+  onUpdateNotes,
+  onUpdateText,
+  onUpdateSubtasks,
+}: TaskDetailModalProps) {
+  const [editingText, setEditingText] = useState(false);
+  const [text, setText] = useState(todo.text);
+  const [notes, setNotes] = useState(todo.notes || '');
+  const [newSubtaskText, setNewSubtaskText] = useState('');
+
+  const priority = todo.priority || 'medium';
+  const priorityConfig = PRIORITY_CONFIG[priority];
+  const subtasks = todo.subtasks || [];
+
+  const handleSaveText = () => {
+    if (onUpdateText && text.trim() !== todo.text) {
+      onUpdateText(todo.id, text.trim());
+    }
+    setEditingText(false);
+  };
+
+  const handleSaveNotes = () => {
+    if (onUpdateNotes && notes !== (todo.notes || '')) {
+      onUpdateNotes(todo.id, notes);
+    }
+  };
+
+  const handleToggleSubtask = (index: number) => {
+    if (!onUpdateSubtasks) return;
+    const updated = subtasks.map((s, i) =>
+      i === index ? { ...s, completed: !s.completed } : s
+    );
+    onUpdateSubtasks(todo.id, updated);
+  };
+
+  const handleAddSubtask = () => {
+    if (!onUpdateSubtasks || !newSubtaskText.trim()) return;
+    const newSubtask: Subtask = {
+      id: `subtask-${Date.now()}`,
+      text: newSubtaskText.trim(),
+      completed: false,
+      priority: 'medium',
+    };
+    onUpdateSubtasks(todo.id, [...subtasks, newSubtask]);
+    setNewSubtaskText('');
+  };
+
+  const handleDeleteSubtask = (index: number) => {
+    if (!onUpdateSubtasks) return;
+    const updated = subtasks.filter((_, i) => i !== index);
+    onUpdateSubtasks(todo.id, updated);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        onClick={(e) => e.stopPropagation()}
+        className={`w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl shadow-2xl ${
+          darkMode ? 'bg-slate-800' : 'bg-white'
+        }`}
+      >
+        {/* Priority bar */}
+        <div className="h-2" style={{ backgroundColor: priorityConfig.color }} />
+
+        {/* Header */}
+        <div className={`flex items-start justify-between p-4 border-b ${
+          darkMode ? 'border-slate-700' : 'border-slate-200'
+        }`}>
+          <div className="flex-1 min-w-0 pr-4">
+            {editingText ? (
+              <div className="space-y-2">
+                <textarea
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  className={`w-full px-3 py-2 rounded-lg border text-base font-medium resize-none ${
+                    darkMode
+                      ? 'bg-slate-700 border-slate-600 text-white'
+                      : 'bg-white border-slate-200 text-slate-800'
+                  } focus:outline-none focus:ring-2 focus:ring-[#0033A0]/30`}
+                  rows={2}
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSaveText}
+                    className="px-3 py-1.5 bg-[#0033A0] text-white text-sm rounded-lg hover:bg-[#002878] transition-colors"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => {
+                      setText(todo.text);
+                      setEditingText(false);
+                    }}
+                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                      darkMode ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div
+                onClick={() => onUpdateText && setEditingText(true)}
+                className={`text-lg font-semibold cursor-pointer hover:opacity-80 ${
+                  darkMode ? 'text-white' : 'text-slate-800'
+                } ${todo.completed ? 'line-through opacity-60' : ''}`}
+              >
+                {todo.text}
+                {onUpdateText && (
+                  <Edit3 className="inline-block w-4 h-4 ml-2 opacity-40" />
+                )}
+              </div>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className={`p-2 rounded-lg transition-colors ${
+              darkMode ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-500'
+            }`}
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-4 space-y-4">
+          {/* Status, Priority, Due Date, Assignee */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={`block text-xs font-medium mb-1.5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                Status
+              </label>
+              <select
+                value={todo.status || 'todo'}
+                onChange={(e) => onStatusChange(todo.id, e.target.value as TodoStatus)}
+                className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                  darkMode
+                    ? 'bg-slate-700 border-slate-600 text-white'
+                    : 'bg-white border-slate-200 text-slate-800'
+                } focus:outline-none focus:ring-2 focus:ring-[#0033A0]/30`}
+              >
+                {columns.map((col) => (
+                  <option key={col.id} value={col.id}>{col.title}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className={`block text-xs font-medium mb-1.5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                Priority
+              </label>
+              <select
+                value={priority}
+                onChange={(e) => onSetPriority(todo.id, e.target.value as TodoPriority)}
+                className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                  darkMode
+                    ? 'bg-slate-700 border-slate-600 text-white'
+                    : 'bg-white border-slate-200 text-slate-800'
+                } focus:outline-none focus:ring-2 focus:ring-[#0033A0]/30`}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+
+            <div>
+              <label className={`block text-xs font-medium mb-1.5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                Due Date
+              </label>
+              <input
+                type="date"
+                value={todo.due_date ? todo.due_date.split('T')[0] : ''}
+                onChange={(e) => onSetDueDate(todo.id, e.target.value || null)}
+                className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                  darkMode
+                    ? 'bg-slate-700 border-slate-600 text-white'
+                    : 'bg-white border-slate-200 text-slate-800'
+                } focus:outline-none focus:ring-2 focus:ring-[#0033A0]/30`}
+              />
+            </div>
+
+            <div>
+              <label className={`block text-xs font-medium mb-1.5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                Assigned To
+              </label>
+              <select
+                value={todo.assigned_to || ''}
+                onChange={(e) => onAssign(todo.id, e.target.value || null)}
+                className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                  darkMode
+                    ? 'bg-slate-700 border-slate-600 text-white'
+                    : 'bg-white border-slate-200 text-slate-800'
+                } focus:outline-none focus:ring-2 focus:ring-[#0033A0]/30`}
+              >
+                <option value="">Unassigned</option>
+                {users.map((user) => (
+                  <option key={user} value={user}>{user}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className={`block text-xs font-medium mb-1.5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+              <FileText className="inline-block w-3.5 h-3.5 mr-1" />
+              Notes
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              onBlur={handleSaveNotes}
+              placeholder="Add notes or context..."
+              rows={3}
+              className={`w-full px-3 py-2 rounded-lg border text-sm resize-none ${
+                darkMode
+                  ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-500'
+                  : 'bg-white border-slate-200 text-slate-800 placeholder-slate-400'
+              } focus:outline-none focus:ring-2 focus:ring-[#0033A0]/30`}
+            />
+          </div>
+
+          {/* Subtasks */}
+          {onUpdateSubtasks && (
+            <div>
+              <label className={`block text-xs font-medium mb-1.5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                <CheckSquare className="inline-block w-3.5 h-3.5 mr-1" />
+                Subtasks ({subtasks.filter(s => s.completed).length}/{subtasks.length})
+              </label>
+
+              <div className="space-y-1.5">
+                {subtasks.map((subtask, index) => (
+                  <div
+                    key={subtask.id || index}
+                    className={`flex items-center gap-2 p-2 rounded-lg ${
+                      darkMode ? 'bg-slate-700/50' : 'bg-slate-50'
+                    }`}
+                  >
+                    <button
+                      onClick={() => handleToggleSubtask(index)}
+                      className={`flex-shrink-0 ${
+                        subtask.completed
+                          ? 'text-green-500'
+                          : darkMode ? 'text-slate-400' : 'text-slate-400'
+                      }`}
+                    >
+                      {subtask.completed ? (
+                        <CheckSquare className="w-4 h-4" />
+                      ) : (
+                        <Square className="w-4 h-4" />
+                      )}
+                    </button>
+                    <span className={`flex-1 text-sm ${
+                      subtask.completed
+                        ? 'line-through opacity-60'
+                        : darkMode ? 'text-white' : 'text-slate-800'
+                    }`}>
+                      {subtask.text}
+                    </span>
+                    <button
+                      onClick={() => handleDeleteSubtask(index)}
+                      className={`p-1 rounded transition-colors ${
+                        darkMode ? 'hover:bg-slate-600 text-slate-400' : 'hover:bg-slate-200 text-slate-400'
+                      } hover:text-red-500`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+
+                {/* Add subtask */}
+                <div className="flex gap-2 mt-2">
+                  <input
+                    type="text"
+                    value={newSubtaskText}
+                    onChange={(e) => setNewSubtaskText(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddSubtask()}
+                    placeholder="Add a subtask..."
+                    className={`flex-1 px-3 py-2 rounded-lg border text-sm ${
+                      darkMode
+                        ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-500'
+                        : 'bg-white border-slate-200 text-slate-800 placeholder-slate-400'
+                    } focus:outline-none focus:ring-2 focus:ring-[#0033A0]/30`}
+                  />
+                  <button
+                    onClick={handleAddSubtask}
+                    disabled={!newSubtaskText.trim()}
+                    className="px-3 py-2 bg-[#0033A0] text-white rounded-lg hover:bg-[#002878] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Meta info */}
+          <div className={`pt-3 border-t text-xs ${
+            darkMode ? 'border-slate-700 text-slate-500' : 'border-slate-200 text-slate-400'
+          }`}>
+            Created by {todo.created_by} • {new Date(todo.created_at).toLocaleDateString()}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className={`flex items-center justify-between p-4 border-t ${
+          darkMode ? 'border-slate-700' : 'border-slate-200'
+        }`}>
+          <button
+            onClick={() => {
+              onDelete(todo.id);
+              onClose();
+            }}
+            className="flex items-center gap-2 px-3 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-sm"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete Task
+          </button>
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-[#0033A0] text-white rounded-lg hover:bg-[#002878] transition-colors text-sm font-medium"
+          >
+            Done
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function KanbanBoard({
   todos,
   users,
@@ -307,11 +710,15 @@ export default function KanbanBoard({
   onDelete,
   onAssign,
   onSetDueDate,
-  onSetPriority
+  onSetPriority,
+  onUpdateNotes,
+  onUpdateText,
+  onUpdateSubtasks,
 }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const [celebrating, setCelebrating] = useState(false);
+  const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -472,6 +879,7 @@ export default function KanbanBoard({
                         onAssign={onAssign}
                         onSetDueDate={onSetDueDate}
                         onSetPriority={onSetPriority}
+                        onCardClick={setSelectedTodo}
                       />
                     ))}
                   </AnimatePresence>
@@ -503,6 +911,26 @@ export default function KanbanBoard({
           {activeTodo && <KanbanCard todo={activeTodo} />}
         </DragOverlay>
       </DndContext>
+
+      {/* Task Detail Modal */}
+      <AnimatePresence>
+        {selectedTodo && (
+          <TaskDetailModal
+            todo={selectedTodo}
+            users={users}
+            darkMode={darkMode}
+            onClose={() => setSelectedTodo(null)}
+            onDelete={onDelete}
+            onAssign={onAssign}
+            onSetDueDate={onSetDueDate}
+            onSetPriority={onSetPriority}
+            onStatusChange={onStatusChange}
+            onUpdateNotes={onUpdateNotes}
+            onUpdateText={onUpdateText}
+            onUpdateSubtasks={onUpdateSubtasks}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -553,6 +553,26 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
     }
   };
 
+  const updateText = async (id: string, text: string) => {
+    const oldTodo = todos.find((t) => t.id === id);
+
+    setTodos((prev) =>
+      prev.map((todo) => (todo.id === id ? { ...todo, text } : todo))
+    );
+
+    const { error: updateError } = await supabase
+      .from('todos')
+      .update({ text })
+      .eq('id', id);
+
+    if (updateError) {
+      console.error('Error updating text:', updateError);
+      if (oldTodo) {
+        setTodos((prev) => prev.map((todo) => (todo.id === id ? oldTodo : todo)));
+      }
+    }
+  };
+
   const setRecurrence = async (id: string, recurrence: RecurrencePattern) => {
     const oldTodo = todos.find((t) => t.id === id);
 
@@ -1204,6 +1224,9 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
             onAssign={assignTodo}
             onSetDueDate={setDueDate}
             onSetPriority={setPriority}
+            onUpdateNotes={updateNotes}
+            onUpdateText={updateText}
+            onUpdateSubtasks={updateSubtasks}
           />
         )}
 
