@@ -20,8 +20,15 @@ COPY . .
 # Remove unnecessary directories before build
 RUN rm -rf outlook-addin/src server/src web/src web/*.ts web/tests ios-app
 
-# Build the application
+# Build arguments for environment variables needed at build time
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+# Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+
 RUN npm run build
 
 # Production image, copy all the files and run next
