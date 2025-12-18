@@ -6,9 +6,55 @@ import { ChatMessage, AuthUser, ChatConversation, TapbackType, MessageReaction }
 import { v4 as uuidv4 } from 'uuid';
 import {
   MessageSquare, Send, X, Minimize2, Maximize2, ChevronDown,
-  Users, ChevronLeft, User, Smile, Check, CheckCheck, Wifi, WifiOff
+  Users, ChevronLeft, User, Smile, Check, CheckCheck, Wifi, WifiOff, Bell, BellOff
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Notification sound (short, pleasant chime)
+const NOTIFICATION_SOUND_URL = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleTs1WpbOzq1fMUJFk8zSrGg/V0Bml8jRzaZ4g2pqmaW4zc7Mu7/Fz8q9rZ2WnqWyxdLOv62WiaOxyb6kkXuNqL+2pJZ7cn2ftLaylnuFjJmnq52Xjn5/gI+dn6OZj4KGjJGVl5qakIuIhYaHiYuOkJGQj42Lh4OCgoKEhoeIiIiHhoWDgoGBgYGCg4SEhISDgoGAgICAgIGBgoKCgoKBgYCAgICAgICBgYGBgYGBgICAgICAgICAgYGBgYGBgYCAgICAgA==';
+
+// Helper to request notification permission
+async function requestNotificationPermission(): Promise<boolean> {
+  if (!('Notification' in window)) {
+    return false;
+  }
+
+  if (Notification.permission === 'granted') {
+    return true;
+  }
+
+  if (Notification.permission !== 'denied') {
+    const permission = await Notification.requestPermission();
+    return permission === 'granted';
+  }
+
+  return false;
+}
+
+// Helper to show browser notification
+function showBrowserNotification(title: string, body: string, onClick?: () => void) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') {
+    return;
+  }
+
+  const notification = new Notification(title, {
+    body,
+    icon: '/favicon.ico',
+    tag: 'chat-message', // Prevents duplicate notifications
+    requireInteraction: false,
+  });
+
+  if (onClick) {
+    notification.onclick = () => {
+      window.focus();
+      onClick();
+      notification.close();
+    };
+  }
+
+  // Auto-close after 5 seconds
+  setTimeout(() => notification.close(), 5000);
+}
 
 // Tapback emoji mapping
 const TAPBACK_EMOJIS: Record<TapbackType, string> = {
@@ -78,6 +124,37 @@ export default function ChatPanel({ currentUser, users }: ChatPanelProps) {
   const [tapbackMessageId, setTapbackMessageId] = useState<string | null>(null);
   const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Initialize audio element for notification sound
+  useEffect(() => {
+    audioRef.current = new Audio(NOTIFICATION_SOUND_URL);
+    audioRef.current.volume = 0.5;
+  }, []);
+
+  // Check notification permission on mount
+  useEffect(() => {
+    if ('Notification' in window) {
+      setNotificationsEnabled(Notification.permission === 'granted');
+    }
+  }, []);
+
+  // Function to play notification sound
+  const playNotificationSound = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {
+        // Ignore autoplay errors
+      });
+    }
+  }, []);
+
+  // Function to handle enabling notifications
+  const enableNotifications = useCallback(async () => {
+    const granted = await requestNotificationPermission();
+    setNotificationsEnabled(granted);
+  }, []);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -233,10 +310,12 @@ export default function ChatPanel({ currentUser, users }: ChatPanelProps) {
   const isAtBottomRef = useRef(isAtBottom);
   const conversationRef = useRef(conversation);
   const showConversationListRef = useRef(showConversationList);
+  const playNotificationSoundRef = useRef(playNotificationSound);
   useEffect(() => { isOpenRef.current = isOpen; }, [isOpen]);
   useEffect(() => { isAtBottomRef.current = isAtBottom; }, [isAtBottom]);
   useEffect(() => { conversationRef.current = conversation; }, [conversation]);
   useEffect(() => { showConversationListRef.current = showConversationList; }, [showConversationList]);
+  useEffect(() => { playNotificationSoundRef.current = playNotificationSound; }, [playNotificationSound]);
 
   const getMessageConversationKey = useCallback((msg: ChatMessage): string | null => {
     if (!msg.recipient) {
@@ -306,6 +385,20 @@ export default function ChatPanel({ currentUser, users }: ChatPanelProps) {
                 ...prev,
                 [msgConvKey]: (prev[msgConvKey] || 0) + 1
               }));
+
+              // Play notification sound
+              playNotificationSoundRef.current();
+
+              // Show browser notification if page is not focused
+              if (document.hidden) {
+                const title = newMsg.recipient
+                  ? `Message from ${newMsg.created_by}`
+                  : `${newMsg.created_by} in Team Chat`;
+                const body = newMsg.text.length > 100
+                  ? newMsg.text.slice(0, 100) + '...'
+                  : newMsg.text;
+                showBrowserNotification(title, body);
+              }
             }
           } else if (payload.eventType === 'UPDATE') {
             const updatedMsg = payload.new as ChatMessage;
@@ -664,6 +757,23 @@ export default function ChatPanel({ currentUser, users }: ChatPanelProps) {
                 )}
               </div>
               <div className="flex items-center gap-2">
+                {/* Notification toggle */}
+                <button
+                  onClick={enableNotifications}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    notificationsEnabled
+                      ? 'bg-green-500/20 text-green-200'
+                      : 'hover:bg-white/20 text-white/70'
+                  }`}
+                  title={notificationsEnabled ? 'Notifications enabled' : 'Enable notifications'}
+                  aria-label={notificationsEnabled ? 'Notifications enabled' : 'Enable notifications'}
+                >
+                  {notificationsEnabled ? (
+                    <Bell className="w-4 h-4" />
+                  ) : (
+                    <BellOff className="w-4 h-4" />
+                  )}
+                </button>
                 {/* Connection status */}
                 <div
                   className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs
