@@ -23,7 +23,15 @@ interface UserSwitcherProps {
 
 type ModalState = 'closed' | 'pin' | 'register';
 
+// Only these users can add new users
+const ADMIN_USERS = ['Adrian', 'Derrick'];
+
 export default function UserSwitcher({ currentUser, onUserChange }: UserSwitcherProps) {
+  // Check if current user can add new users
+  const canAddUsers = ADMIN_USERS.some(
+    admin => currentUser.name.toLowerCase() === admin.toLowerCase()
+  );
+
   const [isOpen, setIsOpen] = useState(false);
   const [users, setUsers] = useState<AuthUser[]>([]);
   const [modalState, setModalState] = useState<ModalState>('closed');
@@ -290,20 +298,22 @@ export default function UserSwitcher({ currentUser, onUserChange }: UserSwitcher
 
             {/* Actions */}
             <div className="border-t border-slate-100">
-              <button
-                onClick={() => {
-                  setIsOpen(false);
-                  setModalState('register');
-                  setNewUserName('');
-                  setNewUserPin(['', '', '', '']);
-                  setConfirmPin(['', '', '', '']);
-                  setError('');
-                }}
-                className="w-full flex items-center gap-2 px-3 py-3 sm:py-2.5 hover:bg-slate-50 active:bg-slate-100 text-[#0033A0] font-medium transition-colors min-h-[44px] touch-manipulation text-base sm:text-sm"
-              >
-                <UserPlus className="w-4 h-4" />
-                Add New User
-              </button>
+              {canAddUsers && (
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    setModalState('register');
+                    setNewUserName('');
+                    setNewUserPin(['', '', '', '']);
+                    setConfirmPin(['', '', '', '']);
+                    setError('');
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-3 sm:py-2.5 hover:bg-slate-50 active:bg-slate-100 text-[#0033A0] font-medium transition-colors min-h-[44px] touch-manipulation text-base sm:text-sm"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  Add New User
+                </button>
+              )}
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center gap-2 px-3 py-3 sm:py-2.5 hover:bg-red-50 active:bg-red-100 text-red-500 font-medium transition-colors min-h-[44px] touch-manipulation text-base sm:text-sm"

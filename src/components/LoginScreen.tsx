@@ -322,23 +322,25 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
               </div>
             )}
 
-            {/* Add user button */}
-            <div className="p-3 sm:p-4 bg-slate-50 border-t border-slate-100">
-              <button
-                onClick={() => {
-                  setScreen('register');
-                  setNewUserName('');
-                  setNewUserPin(['', '', '', '']);
-                  setConfirmPin(['', '', '', '']);
-                  setError('');
-                }}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-[#D4A853] hover:bg-[#c49943] active:bg-[#b38933] text-white rounded-xl font-semibold transition-colors shadow-md min-h-[48px] touch-manipulation text-base sm:text-sm"
-                aria-label="Add new user account"
-              >
-                <UserPlus className="w-5 h-5" aria-hidden="true" />
-                Add New User
-              </button>
-            </div>
+            {/* Add user button - only shown when no users exist (initial setup) */}
+            {users.length === 0 && (
+              <div className="p-3 sm:p-4 bg-slate-50 border-t border-slate-100">
+                <button
+                  onClick={() => {
+                    setScreen('register');
+                    setNewUserName('');
+                    setNewUserPin(['', '', '', '']);
+                    setConfirmPin(['', '', '', '']);
+                    setError('');
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-[#D4A853] hover:bg-[#c49943] active:bg-[#b38933] text-white rounded-xl font-semibold transition-colors shadow-md min-h-[48px] touch-manipulation text-base sm:text-sm"
+                  aria-label="Add new user account"
+                >
+                  <UserPlus className="w-5 h-5" aria-hidden="true" />
+                  Add New User
+                </button>
+              </div>
+            )}
           </div>
         )}
 
