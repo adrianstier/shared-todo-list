@@ -258,20 +258,20 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2" />
       </div>
 
-      <div id="main-content" className="w-full max-w-sm relative z-10">
+      <div id="main-content" className="w-full max-w-[calc(100vw-2rem)] sm:max-w-sm relative z-10">
         {screen === 'users' && (
           <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
             {/* Simplified Header */}
-            <div className="p-6 text-center bg-gradient-to-b from-white to-slate-50 border-b border-slate-100">
-              <div className="w-14 h-14 bg-[#0033A0] rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-[#0033A0]/30">
-                <CheckSquare className="w-7 h-7 text-white" aria-hidden="true" />
+            <div className="p-4 sm:p-6 text-center bg-gradient-to-b from-white to-slate-50 border-b border-slate-100">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#0033A0] rounded-xl flex items-center justify-center mx-auto mb-2 sm:mb-3 shadow-lg shadow-[#0033A0]/30">
+                <CheckSquare className="w-6 h-6 sm:w-7 sm:h-7 text-white" aria-hidden="true" />
               </div>
-              <h1 className="text-xl font-bold text-slate-900">Bealer Agency Tasks</h1>
+              <h1 className="text-lg sm:text-xl font-bold text-slate-900">Bealer Agency Tasks</h1>
             </div>
 
             {/* Search for large user lists */}
             {users.length > 5 && (
-              <div className="px-4 pt-4">
+              <div className="px-3 sm:px-4 pt-3 sm:pt-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden="true" />
                   <input
@@ -279,7 +279,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                     placeholder="Search users..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 focus:border-[#0033A0] text-slate-800"
+                    className="w-full pl-10 pr-4 py-3 sm:py-2.5 rounded-lg border border-slate-200 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 focus:border-[#0033A0] text-slate-800 min-h-[44px] touch-manipulation"
                     aria-label="Search users"
                   />
                 </div>
@@ -288,7 +288,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
 
             {/* Users list */}
             {filteredUsers.length > 0 ? (
-              <div className="px-4 py-3 max-h-[300px] overflow-y-auto">
+              <div className="px-3 sm:px-4 py-3 max-h-[50vh] sm:max-h-[300px] overflow-y-auto">
                 <p className="text-xs font-medium text-slate-400 uppercase tracking-wide px-2 mb-2">
                   Select Account
                 </p>
@@ -323,7 +323,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
             )}
 
             {/* Add user button */}
-            <div className="p-4 bg-slate-50 border-t border-slate-100">
+            <div className="p-3 sm:p-4 bg-slate-50 border-t border-slate-100">
               <button
                 onClick={() => {
                   setScreen('register');
@@ -332,7 +332,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                   setConfirmPin(['', '', '', '']);
                   setError('');
                 }}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-[#D4A853] hover:bg-[#c49943] active:bg-[#b38933] text-white rounded-xl font-semibold transition-colors shadow-md min-h-[48px]"
+                className="w-full flex items-center justify-center gap-2 py-3 bg-[#D4A853] hover:bg-[#c49943] active:bg-[#b38933] text-white rounded-xl font-semibold transition-colors shadow-md min-h-[48px] touch-manipulation text-base sm:text-sm"
                 aria-label="Add new user account"
               >
                 <UserPlus className="w-5 h-5" aria-hidden="true" />
@@ -343,28 +343,28 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
         )}
 
         {screen === 'pin' && selectedUser && (
-          <div className="bg-white rounded-2xl shadow-2xl p-6">
+          <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-6">
             <button
               onClick={() => {
                 setScreen('users');
                 setSearchQuery('');
               }}
-              className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 mb-6 transition-colors min-h-[44px] -ml-2 px-2"
+              className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 mb-4 sm:mb-6 transition-colors min-h-[44px] -ml-2 px-2 touch-manipulation"
               aria-label="Go back to user selection"
             >
               <ChevronLeft className="w-4 h-4" aria-hidden="true" />
               Back
             </button>
 
-            <div className="text-center mb-6">
+            <div className="text-center mb-4 sm:mb-6">
               <div
-                className="w-16 h-16 rounded-xl flex items-center justify-center text-white text-xl font-bold mx-auto mb-3 shadow-lg"
+                className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center text-white text-lg sm:text-xl font-bold mx-auto mb-2 sm:mb-3 shadow-lg"
                 style={{ backgroundColor: selectedUser.color }}
                 aria-hidden="true"
               >
                 {getUserInitials(selectedUser.name)}
               </div>
-              <h2 className="text-xl font-bold text-slate-900">{selectedUser.name}</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900">{selectedUser.name}</h2>
               <p className="text-sm text-slate-400 mt-1">Enter your 4-digit PIN</p>
 
               {/* Attempts indicator - shown before any attempt */}
@@ -375,7 +375,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
               )}
             </div>
 
-            <div className="flex justify-center gap-3 mb-6" role="group" aria-label="PIN entry">
+            <div className="flex justify-center gap-2 sm:gap-3 mb-4 sm:mb-6" role="group" aria-label="PIN entry">
               {pin.map((digit, index) => (
                 <input
                   key={index}
@@ -388,7 +388,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                   onKeyDown={(e) => handlePinKeyDown(e, index, pinRefs, pin)}
                   disabled={lockoutSeconds > 0 || isSubmitting}
                   aria-label={`PIN digit ${index + 1}`}
-                  className={`w-14 h-16 text-center text-2xl font-bold rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-[#0033A0]/30 ${
+                  className={`w-12 h-14 sm:w-14 sm:h-16 text-center text-xl sm:text-2xl font-bold rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-[#0033A0]/30 touch-manipulation ${
                     lockoutSeconds > 0
                       ? 'border-red-200 bg-red-50'
                       : digit
@@ -416,25 +416,25 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
         )}
 
         {screen === 'register' && (
-          <div className="bg-white rounded-2xl shadow-2xl p-6">
+          <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-6">
             <button
               onClick={() => setScreen('users')}
-              className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 mb-6 transition-colors min-h-[44px] -ml-2 px-2"
+              className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 mb-4 sm:mb-6 transition-colors min-h-[44px] -ml-2 px-2 touch-manipulation"
               aria-label="Go back to user selection"
             >
               <ChevronLeft className="w-4 h-4" aria-hidden="true" />
               Back
             </button>
 
-            <div className="text-center mb-6">
-              <div className="w-14 h-14 bg-[#0033A0]/10 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <UserPlus className="w-7 h-7 text-[#0033A0]" aria-hidden="true" />
+            <div className="text-center mb-4 sm:mb-6">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#0033A0]/10 rounded-xl flex items-center justify-center mx-auto mb-2 sm:mb-3">
+                <UserPlus className="w-6 h-6 sm:w-7 sm:h-7 text-[#0033A0]" aria-hidden="true" />
               </div>
-              <h2 className="text-xl font-bold text-slate-900">Create Account</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900">Create Account</h2>
               <p className="text-sm text-slate-400 mt-1">Enter your details below</p>
             </div>
 
-            <form onSubmit={(e) => { e.preventDefault(); handleRegister(); }} className="space-y-5">
+            <form onSubmit={(e) => { e.preventDefault(); handleRegister(); }} className="space-y-4 sm:space-y-5">
               <div>
                 <label htmlFor="user-name" className="block text-sm font-medium text-slate-700 mb-2">
                   Your Name
@@ -447,7 +447,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                   placeholder="Enter your name"
                   autoFocus
                   autoComplete="name"
-                  className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-[#0033A0] focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 transition-colors text-slate-900 placeholder-slate-300"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-[#0033A0] focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 transition-colors text-slate-900 placeholder-slate-300 text-base min-h-[48px] touch-manipulation"
                 />
               </div>
 
@@ -455,7 +455,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Choose a PIN
                 </label>
-                <div className="flex justify-center gap-3" role="group" aria-label="Choose PIN">
+                <div className="flex justify-center gap-2 sm:gap-3" role="group" aria-label="Choose PIN">
                   {newUserPin.map((digit, index) => (
                     <input
                       key={index}
@@ -467,7 +467,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                       onChange={(e) => handlePinChange(index, e.target.value, newPinRefs, newUserPin, setNewUserPin)}
                       onKeyDown={(e) => handlePinKeyDown(e, index, newPinRefs, newUserPin)}
                       aria-label={`New PIN digit ${index + 1}`}
-                      className={`w-12 h-14 text-center text-xl font-bold rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 ${
+                      className={`w-11 h-13 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 touch-manipulation ${
                         digit ? 'border-[#0033A0] bg-[#0033A0]/5' : 'border-slate-200 focus:border-[#0033A0]'
                       } text-slate-900`}
                     />
@@ -479,7 +479,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Confirm PIN
                 </label>
-                <div className="flex justify-center gap-3" role="group" aria-label="Confirm PIN">
+                <div className="flex justify-center gap-2 sm:gap-3" role="group" aria-label="Confirm PIN">
                   {confirmPin.map((digit, index) => (
                     <input
                       key={index}
@@ -491,7 +491,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                       onChange={(e) => handlePinChange(index, e.target.value, confirmPinRefs, confirmPin, setConfirmPin)}
                       onKeyDown={(e) => handlePinKeyDown(e, index, confirmPinRefs, confirmPin)}
                       aria-label={`Confirm PIN digit ${index + 1}`}
-                      className={`w-12 h-14 text-center text-xl font-bold rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
+                      className={`w-11 h-13 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/20 touch-manipulation ${
                         digit ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 focus:border-[#0033A0]'
                       } text-slate-900`}
                     />
@@ -509,7 +509,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3.5 bg-[#0033A0] hover:bg-[#002878] active:bg-[#001d5c] text-white rounded-xl font-semibold transition-colors disabled:opacity-50 shadow-lg shadow-[#0033A0]/30 min-h-[48px]"
+                className="w-full py-3.5 bg-[#0033A0] hover:bg-[#002878] active:bg-[#001d5c] text-white rounded-xl font-semibold transition-colors disabled:opacity-50 shadow-lg shadow-[#0033A0]/30 min-h-[48px] touch-manipulation text-base"
               >
                 {isSubmitting ? 'Creating...' : 'Create Account'}
               </button>
@@ -531,18 +531,18 @@ function UserButton({ user, onSelect }: { user: AuthUser; onSelect: (user: AuthU
   return (
     <button
       onClick={() => onSelect(user)}
-      className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 active:bg-slate-100 transition-colors text-left group min-h-[56px]"
+      className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 active:bg-slate-100 transition-colors text-left group min-h-[56px] touch-manipulation"
       aria-label={`Sign in as ${user.name}`}
     >
       <div
-        className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-semibold shadow-sm flex-shrink-0"
+        className="w-10 h-10 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-white font-semibold shadow-sm flex-shrink-0 text-sm sm:text-base"
         style={{ backgroundColor: user.color }}
         aria-hidden="true"
       >
         {getUserInitials(user.name)}
       </div>
       <div className="flex-1 min-w-0">
-        <span className="font-medium text-slate-900 block truncate">{user.name}</span>
+        <span className="font-medium text-slate-900 block truncate text-base sm:text-sm">{user.name}</span>
         {user.last_login && (
           <p className="text-xs text-slate-400">
             Last: {new Date(user.last_login).toLocaleDateString()}

@@ -277,10 +277,10 @@ export default function TodoItem({
         {/* Completion checkbox */}
         <button
           onClick={handleToggle}
-          className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+          className={`w-7 h-7 sm:w-6 sm:h-6 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all touch-manipulation ${
             todo.completed
               ? 'bg-emerald-500 border-emerald-500'
-              : 'border-slate-300 hover:border-[#0033A0] hover:bg-[#0033A0]/5'
+              : 'border-slate-300 hover:border-[#0033A0] hover:bg-[#0033A0]/5 active:border-[#0033A0] active:bg-[#0033A0]/10'
           }`}
         >
           {todo.completed && <Check className="w-4 h-4 text-white" strokeWidth={3} />}
@@ -556,12 +556,12 @@ export default function TodoItem({
                   onChange={(e) => setNewSubtaskText(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && addManualSubtask()}
                   placeholder="Add a subtask..."
-                  className="flex-1 text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
+                  className="flex-1 text-base sm:text-sm px-3 py-2.5 sm:py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 min-h-[44px] sm:min-h-0 touch-manipulation"
                 />
                 <button
                   onClick={addManualSubtask}
                   disabled={!newSubtaskText.trim()}
-                  className="px-3 py-2 bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 disabled:bg-slate-200 text-white disabled:text-slate-400 rounded-lg text-sm font-medium transition-colors touch-manipulation"
+                  className="px-3 py-2.5 sm:py-2 bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 disabled:bg-slate-200 text-white disabled:text-slate-400 rounded-lg text-sm font-medium transition-colors touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center"
                 >
                   <Plus className="w-4 h-4" />
                 </button>

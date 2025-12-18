@@ -69,3 +69,18 @@ export const STATUS_CONFIG: Record<TodoStatus, { label: string; color: string; b
   in_progress: { label: 'In Progress', color: '#f59e0b', bgColor: 'rgba(245, 158, 11, 0.1)' },
   done: { label: 'Done', color: '#10b981', bgColor: 'rgba(16, 185, 129, 0.1)' },
 };
+
+// Chat message types
+export interface ChatMessage {
+  id: string;
+  text: string;
+  created_by: string;
+  created_at: string;
+  related_todo_id?: string;
+  recipient?: string | null; // null = team chat, username = DM
+}
+
+// Chat conversation type
+export type ChatConversation =
+  | { type: 'team' }
+  | { type: 'dm'; userName: string };

@@ -101,6 +101,11 @@ function SortableCard({ todo, users, onDelete, onAssign, onSetDueDate, onSetPrio
   const priorityConfig = PRIORITY_CONFIG[priority];
   const overdue = todo.due_date && !todo.completed && isOverdue(todo.due_date);
 
+  // Toggle actions on tap for mobile
+  const handleTap = () => {
+    setShowActions(!showActions);
+  };
+
   return (
     <motion.div
       ref={setNodeRef}
@@ -111,13 +116,14 @@ function SortableCard({ todo, users, onDelete, onAssign, onSetDueDate, onSetPrio
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: isDragging ? 0.5 : 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className={`group rounded-xl border-2 overflow-hidden transition-all cursor-grab active:cursor-grabbing bg-white dark:bg-slate-800 ${
+      className={`group rounded-xl border-2 overflow-hidden transition-all cursor-grab active:cursor-grabbing bg-white dark:bg-slate-800 touch-manipulation ${
         isDragging
           ? 'shadow-2xl ring-2 ring-[#0033A0] border-[#0033A0]'
           : 'shadow-sm border-slate-100 dark:border-slate-700 hover:shadow-md hover:border-slate-200 dark:hover:border-slate-600'
       }`}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
+      onTouchEnd={handleTap}
     >
       {/* Priority bar */}
       <div
@@ -125,10 +131,10 @@ function SortableCard({ todo, users, onDelete, onAssign, onSetDueDate, onSetPrio
         style={{ backgroundColor: priorityConfig.color }}
       />
 
-      <div className="p-3">
+      <div className="p-3 sm:p-3">
         {/* Card content */}
         <div className="flex-1 min-w-0">
-          <p className={`text-sm font-medium leading-snug ${
+          <p className={`text-base sm:text-sm font-medium leading-snug ${
             todo.completed ? 'line-through text-slate-400' : 'text-slate-800 dark:text-white'
           }`}>
             {todo.text}
@@ -185,19 +191,19 @@ function SortableCard({ todo, users, onDelete, onAssign, onSetDueDate, onSetPrio
               exit={{ opacity: 0, height: 0 }}
               className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <input
                   type="date"
                   value={todo.due_date ? todo.due_date.split('T')[0] : ''}
                   onChange={(e) => onSetDueDate(todo.id, e.target.value || null)}
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 focus:border-[#0033A0]"
+                  className="flex-1 text-sm sm:text-xs px-3 py-2.5 sm:py-1.5 min-h-[44px] sm:min-h-0 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 focus:border-[#0033A0] touch-manipulation"
                 />
                 <select
                   value={todo.assigned_to || ''}
                   onChange={(e) => onAssign(todo.id, e.target.value || null)}
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 focus:border-[#0033A0]"
+                  className="flex-1 text-sm sm:text-xs px-3 py-2.5 sm:py-1.5 min-h-[44px] sm:min-h-0 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 focus:border-[#0033A0] touch-manipulation"
                 >
                   <option value="">Unassigned</option>
                   {users.map((user) => (
@@ -212,10 +218,10 @@ function SortableCard({ todo, users, onDelete, onAssign, onSetDueDate, onSetPrio
                   }}
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
-                  className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 text-slate-400 hover:text-red-500 transition-colors"
+                  className="p-3 sm:p-1.5 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 text-slate-400 hover:text-red-500 transition-colors touch-manipulation flex items-center justify-center"
                   aria-label="Delete task"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-5 h-5 sm:w-4 sm:h-4" />
                 </motion.button>
               </div>
             </motion.div>
@@ -241,7 +247,7 @@ function DroppableColumn({ id, children, color, isActive, isCurrentOver }: Dropp
   return (
     <div
       ref={setNodeRef}
-      className={`flex-1 p-3 min-h-[250px] space-y-3 transition-all rounded-lg ${
+      className={`flex-1 p-2 sm:p-3 min-h-[180px] sm:min-h-[250px] space-y-2 sm:space-y-3 transition-all rounded-lg ${
         showHighlight
           ? 'bg-slate-100 dark:bg-slate-800'
           : isActive
@@ -421,7 +427,7 @@ export default function KanbanBoard({
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
         {columns.map((column) => {
           const columnTodos = getTodosByStatus(column.id);
 
@@ -429,21 +435,21 @@ export default function KanbanBoard({
             <motion.div
               key={column.id}
               layout
-              className="flex flex-col bg-white dark:bg-slate-900 rounded-2xl shadow-sm border-2 border-slate-100 dark:border-slate-700 overflow-hidden"
+              className="flex flex-col bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-sm border-2 border-slate-100 dark:border-slate-700 overflow-hidden"
             >
               {/* Column header */}
               <div
-                className="flex items-center justify-between px-4 py-3 border-b-2"
+                className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b-2"
                 style={{ backgroundColor: column.bgColor, borderColor: column.color + '30' }}
               >
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">{column.icon}</span>
-                  <h3 className="font-semibold text-slate-800 dark:text-slate-100">
+                  <span className="text-base sm:text-lg">{column.icon}</span>
+                  <h3 className="font-semibold text-sm sm:text-base text-slate-800 dark:text-slate-100">
                     {column.title}
                   </h3>
                 </div>
                 <span
-                  className="px-2.5 py-1 rounded-lg text-sm font-bold"
+                  className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg text-xs sm:text-sm font-bold"
                   style={{ backgroundColor: column.color, color: 'white' }}
                 >
                   {columnTodos.length}
@@ -474,15 +480,15 @@ export default function KanbanBoard({
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="flex flex-col items-center justify-center py-12 text-slate-400 dark:text-slate-500"
+                      className="flex flex-col items-center justify-center py-8 sm:py-12 text-slate-400 dark:text-slate-500"
                     >
                       <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center mb-3"
+                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-2 sm:mb-3"
                         style={{ backgroundColor: column.bgColor }}
                       >
-                        <span className="text-2xl">{column.icon}</span>
+                        <span className="text-xl sm:text-2xl">{column.icon}</span>
                       </div>
-                      <p className="text-sm font-medium">Drop tasks here</p>
+                      <p className="text-xs sm:text-sm font-medium">Drop tasks here</p>
                     </motion.div>
                   )}
                 </DroppableColumn>

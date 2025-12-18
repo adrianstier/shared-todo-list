@@ -101,7 +101,7 @@ export default function SmartParseModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -109,16 +109,16 @@ export default function SmartParseModal({
       />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-[calc(100vw-1.5rem)] sm:max-w-lg max-h-[85vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-purple-500 to-indigo-500">
+        <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-purple-500 to-indigo-500">
           <div className="flex items-center gap-2 text-white">
             <Sparkles className="w-5 h-5" />
-            <h2 className="font-semibold text-lg">AI Task Organizer</h2>
+            <h2 className="font-semibold text-base sm:text-lg">AI Task Organizer</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-white/20 text-white transition-colors"
+            className="p-2 sm:p-1.5 rounded-lg hover:bg-white/20 active:bg-white/30 text-white transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center touch-manipulation"
           >
             <X className="w-5 h-5" />
           </button>
@@ -134,10 +134,10 @@ export default function SmartParseModal({
         ) : (
           <>
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 sm:space-y-5">
               {/* Summary */}
               {parsedResult.summary && (
-                <div className="bg-purple-50 rounded-lg px-4 py-3 text-sm text-purple-700">
+                <div className="bg-purple-50 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 text-sm text-purple-700">
                   {parsedResult.summary}
                 </div>
               )}
@@ -149,7 +149,7 @@ export default function SmartParseModal({
                   type="text"
                   value={mainTaskText}
                   onChange={(e) => setMainTaskText(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-slate-800"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-slate-800 text-base min-h-[48px] touch-manipulation"
                   placeholder="Task description"
                 />
 
@@ -161,7 +161,7 @@ export default function SmartParseModal({
                     <select
                       value={priority}
                       onChange={(e) => setPriority(e.target.value as TodoPriority)}
-                      className={`text-sm px-2 py-1 rounded-lg border-0 font-medium ${priorityColors[priority]}`}
+                      className={`text-base sm:text-sm px-3 py-2 sm:py-1 rounded-lg border-0 font-medium min-h-[44px] sm:min-h-0 touch-manipulation ${priorityColors[priority]}`}
                     >
                       <option value="low">Low</option>
                       <option value="medium">Medium</option>
@@ -177,7 +177,7 @@ export default function SmartParseModal({
                       type="date"
                       value={dueDate}
                       onChange={(e) => setDueDate(e.target.value)}
-                      className="text-sm px-2 py-1 rounded-lg border border-slate-200 bg-white text-slate-700"
+                      className="text-base sm:text-sm px-3 py-2 sm:py-1 rounded-lg border border-slate-200 bg-white text-slate-700 min-h-[44px] sm:min-h-0 touch-manipulation"
                     />
                   </div>
 
@@ -187,7 +187,7 @@ export default function SmartParseModal({
                     <select
                       value={assignedTo}
                       onChange={(e) => setAssignedTo(e.target.value)}
-                      className="text-sm px-2 py-1 rounded-lg border border-slate-200 bg-white text-slate-700"
+                      className="text-base sm:text-sm px-3 py-2 sm:py-1 rounded-lg border border-slate-200 bg-white text-slate-700 min-h-[44px] sm:min-h-0 touch-manipulation"
                     >
                       <option value="">Unassigned</option>
                       {users.map((user) => (
@@ -204,7 +204,7 @@ export default function SmartParseModal({
                   <button
                     type="button"
                     onClick={() => setShowSubtasks(!showSubtasks)}
-                    className="flex items-center justify-between w-full text-sm font-medium text-slate-700"
+                    className="flex items-center justify-between w-full text-sm font-medium text-slate-700 min-h-[44px] touch-manipulation"
                   >
                     <span>Subtasks ({includedCount} of {subtasks.length} selected)</span>
                     {showSubtasks ? (
@@ -215,11 +215,11 @@ export default function SmartParseModal({
                   </button>
 
                   {showSubtasks && (
-                    <div className="space-y-2 bg-slate-50 rounded-lg p-3">
+                    <div className="space-y-2 bg-slate-50 rounded-lg p-2 sm:p-3">
                       {subtasks.map((subtask, index) => (
                         <div
                           key={index}
-                          className={`flex items-center gap-3 p-2.5 rounded-lg transition-all ${
+                          className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-lg transition-all ${
                             subtask.included
                               ? 'bg-white shadow-sm'
                               : 'bg-transparent opacity-50'
@@ -228,13 +228,13 @@ export default function SmartParseModal({
                           <button
                             type="button"
                             onClick={() => toggleSubtask(index)}
-                            className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                            className={`w-6 h-6 sm:w-5 sm:h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors touch-manipulation ${
                               subtask.included
                                 ? 'bg-purple-500 border-purple-500 text-white'
                                 : 'border-slate-300 hover:border-purple-400'
                             }`}
                           >
-                            {subtask.included && <Check className="w-3 h-3" />}
+                            {subtask.included && <Check className="w-3.5 h-3.5 sm:w-3 sm:h-3" />}
                           </button>
 
                           <input
@@ -242,7 +242,7 @@ export default function SmartParseModal({
                             value={subtask.text}
                             onChange={(e) => updateSubtaskText(index, e.target.value)}
                             disabled={!subtask.included}
-                            className={`flex-1 text-sm bg-transparent focus:outline-none ${
+                            className={`flex-1 text-base sm:text-sm bg-transparent focus:outline-none min-h-[36px] touch-manipulation ${
                               subtask.included ? 'text-slate-700' : 'text-slate-400 line-through'
                             }`}
                           />
@@ -275,11 +275,11 @@ export default function SmartParseModal({
             </div>
 
             {/* Footer */}
-            <div className="px-5 py-4 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50">
+            <div className="px-4 sm:px-5 py-3 sm:py-4 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 bg-slate-50">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium transition-colors"
+                className="px-4 py-2.5 sm:py-2 text-slate-600 hover:text-slate-800 active:text-slate-900 font-medium transition-colors min-h-[44px] touch-manipulation order-2 sm:order-1"
               >
                 Cancel
               </button>
@@ -287,7 +287,7 @@ export default function SmartParseModal({
                 type="button"
                 onClick={handleConfirm}
                 disabled={!mainTaskText.trim()}
-                className="px-5 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-slate-300 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+                className="px-5 py-2.5 sm:py-2 bg-purple-500 hover:bg-purple-600 active:bg-purple-700 disabled:bg-slate-300 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 min-h-[44px] touch-manipulation order-1 sm:order-2"
               >
                 <Check className="w-4 h-4" />
                 Add Task{includedCount > 0 ? ` + ${includedCount} Subtasks` : ''}

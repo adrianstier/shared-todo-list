@@ -347,12 +347,12 @@ export default function AddTodo({ onAdd, users, darkMode = true, currentUserId }
                   type="button"
                   onClick={toggleRecording}
                   disabled={isProcessing}
-                  className={`p-2.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                  className={`p-2.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation ${
                     isRecording
                       ? 'bg-red-500 text-white animate-pulse'
                       : darkMode
-                        ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                        ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 active:bg-slate-500'
+                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200 active:bg-slate-300'
                   } disabled:opacity-50`}
                   aria-label={isRecording ? 'Stop recording' : 'Start voice input'}
                   aria-pressed={isRecording}
@@ -367,12 +367,12 @@ export default function AddTodo({ onAdd, users, darkMode = true, currentUserId }
                   type="button"
                   onClick={handleAiClick}
                   disabled={isProcessing}
-                  className={`p-2.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                  className={`p-2.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation ${
                     isComplexInput()
-                      ? 'bg-purple-500 text-white hover:bg-purple-600'
+                      ? 'bg-purple-500 text-white hover:bg-purple-600 active:bg-purple-700'
                       : darkMode
-                        ? 'bg-slate-700 text-purple-400 hover:bg-slate-600'
-                        : 'bg-purple-50 text-purple-600 hover:bg-purple-100'
+                        ? 'bg-slate-700 text-purple-400 hover:bg-slate-600 active:bg-slate-500'
+                        : 'bg-purple-50 text-purple-600 hover:bg-purple-100 active:bg-purple-200'
                   } disabled:opacity-50`}
                   aria-label="Parse with AI"
                   title={isComplexInput() ? 'Complex input detected - AI can help' : 'Parse with AI'}
@@ -389,7 +389,7 @@ export default function AddTodo({ onAdd, users, darkMode = true, currentUserId }
               <button
                 type="submit"
                 disabled={!text.trim() || isProcessing}
-                className="px-4 py-2.5 rounded-lg bg-[#0033A0] hover:bg-[#002878] disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium transition-colors min-h-[44px] flex items-center gap-2"
+                className="px-4 py-2.5 rounded-lg bg-[#0033A0] hover:bg-[#002878] active:bg-[#001d5c] disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium transition-colors min-h-[44px] flex items-center gap-2 touch-manipulation"
                 aria-label="Add task"
               >
                 <Plus className="w-5 h-5" />
@@ -417,7 +417,7 @@ export default function AddTodo({ onAdd, users, darkMode = true, currentUserId }
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as TodoPriority)}
                 aria-label="Priority"
-                className={`appearance-none pl-7 pr-6 py-1.5 rounded-lg text-sm font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 min-h-[36px] ${
+                className={`appearance-none pl-8 pr-7 py-2.5 sm:py-1.5 rounded-lg text-base sm:text-sm font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 min-h-[44px] sm:min-h-[36px] touch-manipulation ${
                   darkMode ? 'bg-slate-700' : ''
                 }`}
                 style={{
@@ -430,8 +430,8 @@ export default function AddTodo({ onAdd, users, darkMode = true, currentUserId }
                 <option value="high">High</option>
                 <option value="urgent">Urgent</option>
               </select>
-              <Flag className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: priorityConfig.color }} />
-              <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none opacity-50" />
+              <Flag className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-3.5 sm:h-3.5 pointer-events-none" style={{ color: priorityConfig.color }} />
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-3.5 sm:h-3.5 pointer-events-none opacity-50" />
             </div>
 
             {/* Due date */}
@@ -441,13 +441,13 @@ export default function AddTodo({ onAdd, users, darkMode = true, currentUserId }
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
                 aria-label="Due date"
-                className={`pl-7 pr-2 py-1.5 rounded-lg text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 min-h-[36px] ${
+                className={`pl-8 pr-3 py-2.5 sm:py-1.5 rounded-lg text-base sm:text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 min-h-[44px] sm:min-h-[36px] touch-manipulation ${
                   darkMode
                     ? 'bg-slate-700 text-white border-slate-600'
                     : 'bg-slate-100 text-slate-700 border-slate-200'
                 } ${dueDate ? '' : darkMode ? 'text-slate-400' : 'text-slate-400'}`}
               />
-              <Calendar className={`absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
+              <Calendar className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-3.5 sm:h-3.5 pointer-events-none ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
             </div>
 
             {/* Assignee */}
@@ -456,7 +456,7 @@ export default function AddTodo({ onAdd, users, darkMode = true, currentUserId }
                 value={assignedTo}
                 onChange={(e) => setAssignedTo(e.target.value)}
                 aria-label="Assign to"
-                className={`appearance-none pl-7 pr-6 py-1.5 rounded-lg text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 min-h-[36px] ${
+                className={`appearance-none pl-8 pr-7 py-2.5 sm:py-1.5 rounded-lg text-base sm:text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 min-h-[44px] sm:min-h-[36px] touch-manipulation ${
                   darkMode
                     ? 'bg-slate-700 text-white'
                     : 'bg-slate-100 text-slate-700'
@@ -467,8 +467,8 @@ export default function AddTodo({ onAdd, users, darkMode = true, currentUserId }
                   <option key={user} value={user}>{user}</option>
                 ))}
               </select>
-              <User className={`absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
-              <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none opacity-50" />
+              <User className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-3.5 sm:h-3.5 pointer-events-none ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-3.5 sm:h-3.5 pointer-events-none opacity-50" />
             </div>
           </div>
         )}

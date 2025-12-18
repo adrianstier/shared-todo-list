@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { AuthUser } from '@/types/todo';
 import UserSwitcher from './UserSwitcher';
+import ChatPanel from './ChatPanel';
 import { useTheme } from '@/contexts/ThemeContext';
 
 interface TodoListProps {
@@ -84,6 +85,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [users, setUsers] = useState<string[]>([]);
+  const [usersWithColors, setUsersWithColors] = useState<{ name: string; color: string }[]>([]);
 
   // Search, sort, and filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -179,7 +181,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
 
     const [todosResult, usersResult] = await Promise.all([
       supabase.from('todos').select('*').order('created_at', { ascending: false }),
-      supabase.from('users').select('name').order('name'),
+      supabase.from('users').select('name, color').order('name'),
     ]);
 
     if (todosResult.error) {
@@ -190,6 +192,11 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
       const registeredUsers = (usersResult.data || []).map((u: { name: string }) => u.name);
       const todoUsers = [...new Set((todosResult.data || []).map((t: Todo) => t.created_by).filter(Boolean))];
       setUsers([...new Set([...registeredUsers, ...todoUsers])]);
+      // Store users with colors for chat
+      setUsersWithColors((usersResult.data || []).map((u: { name: string; color: string }) => ({
+        name: u.name,
+        color: u.color || '#0033A0'
+      })));
       setError(null);
     }
     setLoading(false);
@@ -1264,6 +1271,8 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
         onClose={() => setShowShortcuts(false)}
         darkMode={darkMode}
       />
+
+      <ChatPanel currentUser={currentUser} users={usersWithColors} />
       </div>
     </PullToRefresh>
   );

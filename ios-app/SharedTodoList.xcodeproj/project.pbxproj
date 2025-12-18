@@ -1,0 +1,847 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		/* App Files */
+		APP001 /* SharedTodoListApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC001; };
+		APP002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC002; };
+		APP003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = RES001; };
+
+		/* Models */
+		MOD001 /* Todo.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC010; };
+		MOD002 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC011; };
+		MOD003 /* SyncOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC012; };
+
+		/* Services */
+		SVC001 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC020; };
+		SVC002 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC021; };
+		SVC003 /* SyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC022; };
+		SVC004 /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC023; };
+		SVC005 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC024; };
+
+		/* Config */
+		CFG001 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC030; };
+
+		/* Auth Views */
+		AUTH001 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC040; };
+		AUTH002 /* CreateAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC041; };
+
+		/* Task Views */
+		TSK001 /* TaskListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC050; };
+		TSK002 /* TaskRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC051; };
+		TSK003 /* TaskDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC052; };
+		TSK004 /* AddTaskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC053; };
+
+		/* Kanban */
+		KAN001 /* KanbanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC060; };
+
+		/* Settings */
+		SET001 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC070; };
+
+		/* Shared Components */
+		SHR001 /* ConnectionIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC080; };
+		SHR002 /* AvatarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC081; };
+		SHR003 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC082; };
+		SHR004 /* CelebrationEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC083; };
+
+		/* Widget */
+		WGT001 /* TodoWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC090; };
+		WGT002 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FRM001; };
+		WGT003 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FRM002; };
+
+		/* Supabase Package */
+		PKG001 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = PRD001; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		PROXY001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = ROOT001;
+			proxyType = 1;
+			remoteGlobalIDString = TGT002;
+			remoteInfo = TodoWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		COPY001 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		/* Products */
+		PRD_APP /* SharedTodoList.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SharedTodoList.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		PRD_WGT /* TodoWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TodoWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+
+		/* Frameworks */
+		FRM001 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		FRM002 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+
+		/* App Sources */
+		SRC001 /* SharedTodoListApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedTodoListApp.swift; sourceTree = "<group>"; };
+		SRC002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+
+		/* Models */
+		SRC010 /* Todo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Todo.swift; sourceTree = "<group>"; };
+		SRC011 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
+		SRC012 /* SyncOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncOperation.swift; sourceTree = "<group>"; };
+
+		/* Services */
+		SRC020 /* SupabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseService.swift; sourceTree = "<group>"; };
+		SRC021 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		SRC022 /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncService.swift; sourceTree = "<group>"; };
+		SRC023 /* AIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIService.swift; sourceTree = "<group>"; };
+		SRC024 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+
+		/* Config */
+		SRC030 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+
+		/* Auth Views */
+		SRC040 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		SRC041 /* CreateAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateAccountView.swift; sourceTree = "<group>"; };
+
+		/* Task Views */
+		SRC050 /* TaskListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskListView.swift; sourceTree = "<group>"; };
+		SRC051 /* TaskRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskRowView.swift; sourceTree = "<group>"; };
+		SRC052 /* TaskDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDetailView.swift; sourceTree = "<group>"; };
+		SRC053 /* AddTaskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTaskView.swift; sourceTree = "<group>"; };
+
+		/* Kanban */
+		SRC060 /* KanbanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KanbanView.swift; sourceTree = "<group>"; };
+
+		/* Settings */
+		SRC070 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+
+		/* Shared */
+		SRC080 /* ConnectionIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionIndicator.swift; sourceTree = "<group>"; };
+		SRC081 /* AvatarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarView.swift; sourceTree = "<group>"; };
+		SRC082 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		SRC083 /* CelebrationEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CelebrationEffect.swift; sourceTree = "<group>"; };
+
+		/* Widget */
+		SRC090 /* TodoWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoWidgetBundle.swift; sourceTree = "<group>"; };
+
+		/* Resources */
+		RES001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		RES002 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		RES003 /* SharedTodoList.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SharedTodoList.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		FRM_APP /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				PKG001 /* Supabase in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FRM_WGT /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				WGT002 /* WidgetKit.framework in Frameworks */,
+				WGT003 /* SwiftUI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		ROOT001 = {
+			isa = PBXGroup;
+			children = (
+				GRP_APP /* SharedTodoList */,
+				GRP_WGT /* Widgets */,
+				GRP_FRM /* Frameworks */,
+				GRP_PRD /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		GRP_PRD /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				PRD_APP /* SharedTodoList.app */,
+				PRD_WGT /* TodoWidgetExtension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		GRP_FRM /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				FRM001 /* WidgetKit.framework */,
+				FRM002 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		GRP_APP /* SharedTodoList */ = {
+			isa = PBXGroup;
+			children = (
+				GRP_APP_APP /* App */,
+				GRP_APP_CORE /* Core */,
+				GRP_APP_DATA /* Data */,
+				GRP_APP_FEAT /* Features */,
+				GRP_APP_RES /* Resources */,
+			);
+			path = SharedTodoList;
+			sourceTree = "<group>";
+		};
+		GRP_APP_APP /* App */ = {
+			isa = PBXGroup;
+			children = (
+				SRC001 /* SharedTodoListApp.swift */,
+				SRC002 /* ContentView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		GRP_APP_CORE /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				GRP_APP_CFG /* Config */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		GRP_APP_CFG /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				SRC030 /* Config.swift */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		GRP_APP_DATA /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				GRP_APP_MDL /* Models */,
+				GRP_APP_SVC /* Services */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		GRP_APP_MDL /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				SRC010 /* Todo.swift */,
+				SRC011 /* User.swift */,
+				SRC012 /* SyncOperation.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		GRP_APP_SVC /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				SRC020 /* SupabaseService.swift */,
+				SRC021 /* AuthService.swift */,
+				SRC022 /* SyncService.swift */,
+				SRC023 /* AIService.swift */,
+				SRC024 /* NotificationService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		GRP_APP_FEAT /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				GRP_FEAT_AUTH /* Auth */,
+				GRP_FEAT_TSK /* TaskList */,
+				GRP_FEAT_DTL /* TaskDetail */,
+				GRP_FEAT_ADD /* AddTask */,
+				GRP_FEAT_KAN /* Kanban */,
+				GRP_FEAT_SET /* Settings */,
+				GRP_FEAT_SHR /* Shared */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		GRP_FEAT_AUTH /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				GRP_AUTH_VW /* Views */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		GRP_AUTH_VW /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				SRC040 /* LoginView.swift */,
+				SRC041 /* CreateAccountView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		GRP_FEAT_TSK /* TaskList */ = {
+			isa = PBXGroup;
+			children = (
+				GRP_TSK_VW /* Views */,
+			);
+			path = TaskList;
+			sourceTree = "<group>";
+		};
+		GRP_TSK_VW /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				SRC050 /* TaskListView.swift */,
+				SRC051 /* TaskRowView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		GRP_FEAT_DTL /* TaskDetail */ = {
+			isa = PBXGroup;
+			children = (
+				GRP_DTL_VW /* Views */,
+			);
+			path = TaskDetail;
+			sourceTree = "<group>";
+		};
+		GRP_DTL_VW /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				SRC052 /* TaskDetailView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		GRP_FEAT_ADD /* AddTask */ = {
+			isa = PBXGroup;
+			children = (
+				GRP_ADD_VW /* Views */,
+			);
+			path = AddTask;
+			sourceTree = "<group>";
+		};
+		GRP_ADD_VW /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				SRC053 /* AddTaskView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		GRP_FEAT_KAN /* Kanban */ = {
+			isa = PBXGroup;
+			children = (
+				GRP_KAN_VW /* Views */,
+			);
+			path = Kanban;
+			sourceTree = "<group>";
+		};
+		GRP_KAN_VW /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				SRC060 /* KanbanView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		GRP_FEAT_SET /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				GRP_SET_VW /* Views */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		GRP_SET_VW /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				SRC070 /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		GRP_FEAT_SHR /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				GRP_SHR_CMP /* Components */,
+				GRP_SHR_MOD /* Modifiers */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		GRP_SHR_CMP /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				SRC080 /* ConnectionIndicator.swift */,
+				SRC081 /* AvatarView.swift */,
+				SRC082 /* EmptyStateView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		GRP_SHR_MOD /* Modifiers */ = {
+			isa = PBXGroup;
+			children = (
+				SRC083 /* CelebrationEffect.swift */,
+			);
+			path = Modifiers;
+			sourceTree = "<group>";
+		};
+		GRP_APP_RES /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				RES001 /* Assets.xcassets */,
+				RES002 /* Info.plist */,
+				RES003 /* SharedTodoList.entitlements */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		GRP_WGT /* Widgets */ = {
+			isa = PBXGroup;
+			children = (
+				SRC090 /* TodoWidgetBundle.swift */,
+			);
+			path = Widgets;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		TGT001 /* SharedTodoList */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CFG_TGT001;
+			buildPhases = (
+				SRC_APP /* Sources */,
+				FRM_APP /* Frameworks */,
+				RES_APP /* Resources */,
+				COPY001 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SharedTodoList;
+			packageProductDependencies = (
+				PRD001 /* Supabase */,
+			);
+			productName = SharedTodoList;
+			productReference = PRD_APP /* SharedTodoList.app */;
+			productType = "com.apple.product-type.application";
+		};
+		TGT002 /* TodoWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CFG_TGT002;
+			buildPhases = (
+				SRC_WGT /* Sources */,
+				FRM_WGT /* Frameworks */,
+				RES_WGT /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TodoWidgetExtension;
+			productName = TodoWidgetExtension;
+			productReference = PRD_WGT /* TodoWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		PRJ001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					TGT001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					TGT002 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = CFG_PRJ;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = ROOT001;
+			packageReferences = (
+				PKG_REF001 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
+			productRefGroup = GRP_PRD /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				TGT001 /* SharedTodoList */,
+				TGT002 /* TodoWidgetExtension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		RES_APP /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				APP003 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		RES_WGT /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		SRC_APP /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				APP001 /* SharedTodoListApp.swift in Sources */,
+				APP002 /* ContentView.swift in Sources */,
+				MOD001 /* Todo.swift in Sources */,
+				MOD002 /* User.swift in Sources */,
+				MOD003 /* SyncOperation.swift in Sources */,
+				SVC001 /* SupabaseService.swift in Sources */,
+				SVC002 /* AuthService.swift in Sources */,
+				SVC003 /* SyncService.swift in Sources */,
+				SVC004 /* AIService.swift in Sources */,
+				SVC005 /* NotificationService.swift in Sources */,
+				CFG001 /* Config.swift in Sources */,
+				AUTH001 /* LoginView.swift in Sources */,
+				AUTH002 /* CreateAccountView.swift in Sources */,
+				TSK001 /* TaskListView.swift in Sources */,
+				TSK002 /* TaskRowView.swift in Sources */,
+				TSK003 /* TaskDetailView.swift in Sources */,
+				TSK004 /* AddTaskView.swift in Sources */,
+				KAN001 /* KanbanView.swift in Sources */,
+				SET001 /* SettingsView.swift in Sources */,
+				SHR001 /* ConnectionIndicator.swift in Sources */,
+				SHR002 /* AvatarView.swift in Sources */,
+				SHR003 /* EmptyStateView.swift in Sources */,
+				SHR004 /* CelebrationEffect.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		SRC_WGT /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				WGT001 /* TodoWidgetBundle.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		CFG_DBG /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		CFG_REL /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		CFG_TGT001_DBG /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = SharedTodoList/Resources/SharedTodoList.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SharedTodoList/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Shared Todo";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.sharedtodolist;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		CFG_TGT001_REL /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = SharedTodoList/Resources/SharedTodoList.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SharedTodoList/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Shared Todo";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.sharedtodolist;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		CFG_TGT002_DBG /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Widgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Todo Widget";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.sharedtodolist.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		CFG_TGT002_REL /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Widgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Todo Widget";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.sharedtodolist.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		CFG_PRJ /* Build configuration list for PBXProject "SharedTodoList" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CFG_DBG /* Debug */,
+				CFG_REL /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CFG_TGT001 /* Build configuration list for PBXNativeTarget "SharedTodoList" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CFG_TGT001_DBG /* Debug */,
+				CFG_TGT001_REL /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CFG_TGT002 /* Build configuration list for PBXNativeTarget "TodoWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CFG_TGT002_DBG /* Debug */,
+				CFG_TGT002_REL /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		PKG_REF001 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		PRD001 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = PKG_REF001 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = PRJ001 /* Project object */;
+}
