@@ -21,6 +21,10 @@ import {
   User,
   AlertCircle,
   File,
+  Circle,
+  CheckCircle2,
+  XCircle,
+  Wand2,
 } from 'lucide-react';
 import { Subtask, TodoPriority, PRIORITY_CONFIG } from '@/types/todo';
 import { v4 as uuidv4 } from 'uuid';
@@ -48,6 +52,31 @@ interface FileImporterProps {
 
 type FileType = 'audio' | 'pdf' | 'image' | 'unknown';
 type ProcessingStatus = 'idle' | 'uploading' | 'processing' | 'parsing' | 'ready' | 'error';
+
+// Processing steps for the progress modal
+type ProcessingStep = {
+  id: string;
+  label: string;
+  description: string;
+  status: 'pending' | 'active' | 'completed' | 'error';
+};
+
+const getProcessingSteps = (fileType: FileType): ProcessingStep[] => {
+  if (fileType === 'audio') {
+    return [
+      { id: 'upload', label: 'Uploading', description: 'Sending audio to server', status: 'pending' },
+      { id: 'transcribe', label: 'Transcribing', description: 'Converting speech to text with AI', status: 'pending' },
+      { id: 'analyze', label: 'Analyzing', description: 'Understanding context and intent', status: 'pending' },
+      { id: 'extract', label: 'Extracting Tasks', description: 'Identifying action items', status: 'pending' },
+    ];
+  }
+  return [
+    { id: 'upload', label: 'Uploading', description: 'Sending file to server', status: 'pending' },
+    { id: 'read', label: 'Reading', description: fileType === 'pdf' ? 'Extracting text from PDF' : 'Analyzing image content', status: 'pending' },
+    { id: 'analyze', label: 'Analyzing', description: 'Understanding document context', status: 'pending' },
+    { id: 'extract', label: 'Extracting Tasks', description: 'Identifying action items', status: 'pending' },
+  ];
+};
 
 function getFileType(file: File): FileType {
   const name = file.name.toLowerCase();
@@ -107,6 +136,37 @@ export default function FileImporter({
   const [error, setError] = useState('');
   const [extractedText, setExtractedText] = useState('');
   const [showFullText, setShowFullText] = useState(false);
+  const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([]);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+
+  // Helper to update a specific step's status
+  const updateStepStatus = (stepId: string, stepStatus: ProcessingStep['status']) => {
+    setProcessingSteps(prev => prev.map(step =>
+      step.id === stepId ? { ...step, status: stepStatus } : step
+    ));
+  };
+
+  // Helper to advance to the next step
+  const advanceToStep = (stepId: string) => {
+    setProcessingSteps(prev => {
+      const stepIndex = prev.findIndex(s => s.id === stepId);
+      return prev.map((step, i) => {
+        if (i < stepIndex) return { ...step, status: 'completed' as const };
+        if (i === stepIndex) return { ...step, status: 'active' as const };
+        return step;
+      });
+    });
+    setCurrentStepIndex(prev => {
+      const steps = processingSteps;
+      const newIndex = steps.findIndex(s => s.id === stepId);
+      return newIndex >= 0 ? newIndex : prev;
+    });
+  };
+
+  // Mark all steps as completed
+  const completeAllSteps = () => {
+    setProcessingSteps(prev => prev.map(step => ({ ...step, status: 'completed' as const })));
+  };
 
   // Parsed task state
   const [mainTask, setMainTask] = useState({
@@ -191,8 +251,17 @@ export default function FileImporter({
   const processFile = async () => {
     if (!selectedFile) return;
 
+    // Initialize processing steps
+    const steps = getProcessingSteps(fileType);
+    setProcessingSteps(steps);
+    setCurrentStepIndex(0);
     setStatus('processing');
     setError('');
+
+    // Start with upload step
+    advanceToStep('upload');
+    // Small delay to show upload step
+    await new Promise(resolve => setTimeout(resolve, 300));
 
     try {
       if (fileType === 'audio') {
@@ -200,6 +269,9 @@ export default function FileImporter({
         const formData = new FormData();
         formData.append('audio', selectedFile);
         formData.append('users', JSON.stringify(users));
+
+        // Move to transcribe step
+        advanceToStep('transcribe');
 
         const response = await fetch('/api/ai/transcribe', {
           method: 'POST',
@@ -219,8 +291,14 @@ export default function FileImporter({
         const transcript = data.text || '';
         setExtractedText(transcript);
 
+        // Move to analyze step
+        advanceToStep('analyze');
+        await new Promise(resolve => setTimeout(resolve, 200));
+
         // Parse the transcript
         setStatus('parsing');
+        advanceToStep('extract');
+
         const parseResponse = await fetch('/api/ai/smart-parse', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -247,6 +325,9 @@ export default function FileImporter({
         formData.append('file', selectedFile);
         formData.append('users', JSON.stringify(users));
 
+        // Move to read step
+        advanceToStep('read');
+
         const response = await fetch('/api/ai/parse-file', {
           method: 'POST',
           body: formData,
@@ -257,6 +338,9 @@ export default function FileImporter({
           throw new Error(errorData.error || 'Failed to process file');
         }
 
+        // Move to analyze step
+        advanceToStep('analyze');
+
         const data = await response.json();
         if (!data.success) {
           throw new Error(data.error || 'Failed to process file');
@@ -264,6 +348,10 @@ export default function FileImporter({
 
         setExtractedText(data.extractedText || '');
         setSummary(data.documentSummary || '');
+
+        // Move to extract step
+        advanceToStep('extract');
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         // Apply parsed results
         setMainTask({
@@ -288,8 +376,16 @@ export default function FileImporter({
         }
       }
 
+      // Complete all steps
+      completeAllSteps();
+      await new Promise(resolve => setTimeout(resolve, 300));
       setStatus('ready');
     } catch (err) {
+      // Mark current step as error
+      const currentStep = processingSteps.find(s => s.status === 'active');
+      if (currentStep) {
+        updateStepStatus(currentStep.id, 'error');
+      }
       setError(err instanceof Error ? err.message : 'Failed to process file');
       setStatus('error');
     }
@@ -554,12 +650,94 @@ export default function FileImporter({
             </div>
           )}
 
-          {/* Processing state */}
+          {/* Processing state - Step by Step Progress */}
           {(status === 'processing' || status === 'parsing') && (
-            <div className="p-8 text-center">
-              <Loader2 className="w-12 h-12 text-purple-500 animate-spin mx-auto mb-4" />
-              <p className={`font-medium text-lg ${darkMode ? 'text-slate-200' : 'text-slate-700'}`}>{getProcessingText()}</p>
-              <p className={`text-sm mt-2 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>This may take a moment</p>
+            <div className="py-8 px-4">
+              {/* Header with icon */}
+              <div className="text-center mb-8">
+                <div className={`w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center ${
+                  darkMode ? 'bg-purple-900/50' : 'bg-purple-100'
+                }`}>
+                  <Wand2 className="w-8 h-8 text-purple-500 animate-pulse" />
+                </div>
+                <h3 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-slate-800'}`}>
+                  AI is processing your file
+                </h3>
+                <p className={`text-sm mt-1 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  This usually takes 10-30 seconds
+                </p>
+              </div>
+
+              {/* Steps */}
+              <div className="max-w-sm mx-auto space-y-4">
+                {processingSteps.map((step, index) => (
+                  <div
+                    key={step.id}
+                    className={`flex items-center gap-4 p-3 rounded-xl transition-all ${
+                      step.status === 'active'
+                        ? darkMode ? 'bg-purple-900/30 ring-2 ring-purple-500/50' : 'bg-purple-50 ring-2 ring-purple-200'
+                        : step.status === 'completed'
+                          ? darkMode ? 'bg-green-900/20' : 'bg-green-50'
+                          : step.status === 'error'
+                            ? darkMode ? 'bg-red-900/20' : 'bg-red-50'
+                            : darkMode ? 'bg-slate-800/50' : 'bg-slate-50'
+                    }`}
+                  >
+                    {/* Step indicator */}
+                    <div className="flex-shrink-0">
+                      {step.status === 'completed' ? (
+                        <CheckCircle2 className="w-6 h-6 text-green-500" />
+                      ) : step.status === 'active' ? (
+                        <Loader2 className="w-6 h-6 text-purple-500 animate-spin" />
+                      ) : step.status === 'error' ? (
+                        <XCircle className="w-6 h-6 text-red-500" />
+                      ) : (
+                        <Circle className={`w-6 h-6 ${darkMode ? 'text-slate-600' : 'text-slate-300'}`} />
+                      )}
+                    </div>
+
+                    {/* Step content */}
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-medium ${
+                        step.status === 'active'
+                          ? 'text-purple-600'
+                          : step.status === 'completed'
+                            ? darkMode ? 'text-green-400' : 'text-green-700'
+                            : step.status === 'error'
+                              ? 'text-red-500'
+                              : darkMode ? 'text-slate-400' : 'text-slate-500'
+                      }`}>
+                        {step.label}
+                      </p>
+                      <p className={`text-sm ${
+                        step.status === 'active'
+                          ? darkMode ? 'text-purple-300' : 'text-purple-600'
+                          : darkMode ? 'text-slate-500' : 'text-slate-400'
+                      }`}>
+                        {step.description}
+                      </p>
+                    </div>
+
+                    {/* Step number */}
+                    <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                      step.status === 'completed'
+                        ? 'bg-green-500 text-white'
+                        : step.status === 'active'
+                          ? 'bg-purple-500 text-white'
+                          : step.status === 'error'
+                            ? 'bg-red-500 text-white'
+                            : darkMode ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-500'
+                    }`}>
+                      {index + 1}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Helpful tip */}
+              <p className={`text-center text-xs mt-6 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                💡 AI is analyzing your content and extracting actionable tasks
+              </p>
             </div>
           )}
 
