@@ -271,11 +271,6 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
           }}
         />
 
-        {/* Decorative floating shapes */}
-        <div className="absolute top-20 left-[10%] w-2 h-2 bg-[#D4A853] rounded-full opacity-60 animate-bounce" style={{ animationDuration: '3s' }} />
-        <div className="absolute top-40 right-[15%] w-3 h-3 bg-white/30 rounded-full animate-bounce" style={{ animationDuration: '4s', animationDelay: '1s' }} />
-        <div className="absolute bottom-32 left-[20%] w-2 h-2 bg-[#D4A853]/50 rounded-full animate-bounce" style={{ animationDuration: '3.5s', animationDelay: '0.5s' }} />
-        <div className="absolute bottom-48 right-[25%] w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce" style={{ animationDuration: '4.5s', animationDelay: '2s' }} />
       </div>
 
       <div id="main-content" className="w-full max-w-[calc(100vw-2rem)] sm:max-w-sm relative z-10">
@@ -370,7 +365,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
 
             {/* Add user button - only shown when no users exist (initial setup) */}
             {users.length === 0 && (
-              <div className="p-3 sm:p-4 bg-slate-50 border-t border-slate-100">
+              <div className="p-4 sm:p-5 bg-gradient-to-b from-white to-slate-50/80">
                 <button
                   onClick={() => {
                     setScreen('register');
@@ -379,11 +374,12 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                     setConfirmPin(['', '', '', '']);
                     setError('');
                   }}
-                  className="w-full flex items-center justify-center gap-2 py-3 bg-[#D4A853] hover:bg-[#c49943] active:bg-[#b38933] text-white rounded-xl font-semibold transition-colors shadow-md min-h-[48px] touch-manipulation text-base sm:text-sm"
+                  className="group relative w-full flex items-center justify-center gap-2.5 py-3.5 bg-gradient-to-r from-[#D4A853] to-[#c49943] hover:from-[#c49943] hover:to-[#b38933] active:from-[#b38933] active:to-[#a37923] text-white rounded-xl font-semibold transition-all duration-200 shadow-lg shadow-[#D4A853]/25 hover:shadow-xl hover:shadow-[#D4A853]/30 min-h-[52px] touch-manipulation text-base overflow-hidden"
                   aria-label="Add new user account"
                 >
-                  <UserPlus className="w-5 h-5" aria-hidden="true" />
-                  Add New User
+                  <span className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+                  <UserPlus className="w-5 h-5 relative z-10 transition-transform group-hover:scale-110" aria-hidden="true" />
+                  <span className="relative z-10">Get Started</span>
                 </button>
               </div>
             )}
@@ -391,39 +387,50 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
         )}
 
         {screen === 'pin' && selectedUser && (
-          <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-6">
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-black/20 p-5 sm:p-7 border border-white/20">
             <button
               onClick={() => {
                 setScreen('users');
                 setSearchQuery('');
               }}
-              className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 mb-4 sm:mb-6 transition-colors min-h-[44px] -ml-2 px-2 touch-manipulation"
+              className="group flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-700 mb-5 sm:mb-7 transition-all duration-200 min-h-[44px] -ml-2 px-2 touch-manipulation rounded-lg hover:bg-slate-100"
               aria-label="Go back to user selection"
             >
-              <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+              <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" aria-hidden="true" />
               Back
             </button>
 
-            <div className="text-center mb-4 sm:mb-6">
-              <div
-                className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center text-white text-lg sm:text-xl font-bold mx-auto mb-2 sm:mb-3 shadow-lg"
-                style={{ backgroundColor: selectedUser.color }}
-                aria-hidden="true"
-              >
-                {getUserInitials(selectedUser.name)}
+            <div className="text-center mb-6 sm:mb-8">
+              {/* User avatar with glow */}
+              <div className="relative inline-block mb-4">
+                <div
+                  className="absolute inset-0 rounded-2xl blur-lg opacity-40 scale-110"
+                  style={{ backgroundColor: selectedUser.color }}
+                />
+                <div
+                  className="relative w-18 h-18 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center text-white text-xl sm:text-2xl font-bold shadow-xl ring-4 ring-white"
+                  style={{ backgroundColor: selectedUser.color }}
+                  aria-hidden="true"
+                >
+                  {getUserInitials(selectedUser.name)}
+                </div>
               </div>
-              <h2 className="text-lg sm:text-xl font-bold text-slate-900">{selectedUser.name}</h2>
-              <p className="text-sm text-slate-400 mt-1">Enter your 4-digit PIN</p>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{selectedUser.name}</h2>
+              <p className="text-sm text-slate-500 mt-1.5 flex items-center justify-center gap-2">
+                <Lock className="w-3.5 h-3.5" />
+                Enter your 4-digit PIN
+              </p>
 
               {/* Attempts indicator - shown before any attempt */}
               {lockoutSeconds === 0 && attemptsRemaining < 3 && (
-                <p className="text-xs text-amber-600 mt-2 font-medium">
+                <div className="mt-3 inline-flex items-center gap-1.5 text-xs text-amber-600 font-medium bg-amber-50 px-3 py-1.5 rounded-full">
+                  <AlertCircle className="w-3.5 h-3.5" />
                   {attemptsRemaining} attempt{attemptsRemaining !== 1 ? 's' : ''} remaining
-                </p>
+                </div>
               )}
             </div>
 
-            <div className="flex justify-center gap-2 sm:gap-3 mb-4 sm:mb-6" role="group" aria-label="PIN entry">
+            <div className="flex justify-center gap-3 sm:gap-4 mb-6" role="group" aria-label="PIN entry">
               {pin.map((digit, index) => (
                 <input
                   key={index}
@@ -436,55 +443,64 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                   onKeyDown={(e) => handlePinKeyDown(e, index, pinRefs, pin)}
                   disabled={lockoutSeconds > 0 || isSubmitting}
                   aria-label={`PIN digit ${index + 1}`}
-                  className={`w-12 h-14 sm:w-14 sm:h-16 text-center text-xl sm:text-2xl font-bold rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-[#0033A0]/30 touch-manipulation ${
+                  className={`w-14 h-16 sm:w-16 sm:h-18 text-center text-2xl sm:text-3xl font-bold rounded-2xl border-2 transition-all duration-200 focus:outline-none focus:ring-4 touch-manipulation ${
                     lockoutSeconds > 0
-                      ? 'border-red-200 bg-red-50'
+                      ? 'border-red-300 bg-red-50 focus:ring-red-100'
                       : digit
-                        ? 'border-[#0033A0] bg-[#0033A0]/5'
-                        : 'border-slate-200 focus:border-[#0033A0]'
+                        ? 'border-[#0033A0] bg-[#0033A0]/5 focus:ring-[#0033A0]/20 shadow-sm'
+                        : 'border-slate-200 focus:border-[#0033A0] focus:ring-[#0033A0]/10 bg-slate-50/50'
                   } text-slate-900`}
                 />
               ))}
             </div>
 
             {(error || lockoutSeconds > 0) && (
-              <div className="flex items-center justify-center gap-2 text-red-600 text-sm bg-red-50 py-3 px-4 rounded-lg" role="alert">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
-                <span>{lockoutSeconds > 0 ? `Locked. Wait ${lockoutSeconds}s` : error}</span>
+              <div className="flex items-center justify-center gap-2.5 text-red-600 text-sm bg-gradient-to-r from-red-50 to-red-100/50 py-3.5 px-5 rounded-xl border border-red-200/50" role="alert">
+                <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <AlertCircle className="w-4 h-4" aria-hidden="true" />
+                </div>
+                <span className="font-medium">{lockoutSeconds > 0 ? `Account locked. Please wait ${lockoutSeconds}s` : error}</span>
               </div>
             )}
 
             {isSubmitting && (
-              <div className="flex justify-center" aria-live="polite">
-                <div className="w-6 h-6 border-2 border-[#0033A0] border-t-transparent rounded-full animate-spin" />
-                <span className="sr-only">Verifying PIN...</span>
+              <div className="flex flex-col items-center gap-2" aria-live="polite">
+                <div className="relative w-8 h-8">
+                  <div className="absolute inset-0 border-3 border-[#0033A0]/20 rounded-full" />
+                  <div className="absolute inset-0 border-3 border-[#0033A0] border-t-transparent rounded-full animate-spin" />
+                </div>
+                <span className="text-sm text-slate-500">Verifying...</span>
               </div>
             )}
           </div>
         )}
 
         {screen === 'register' && (
-          <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-6">
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-black/20 p-5 sm:p-7 border border-white/20">
             <button
               onClick={() => setScreen('users')}
-              className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 mb-4 sm:mb-6 transition-colors min-h-[44px] -ml-2 px-2 touch-manipulation"
+              className="group flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-700 mb-5 sm:mb-7 transition-all duration-200 min-h-[44px] -ml-2 px-2 touch-manipulation rounded-lg hover:bg-slate-100"
               aria-label="Go back to user selection"
             >
-              <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+              <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" aria-hidden="true" />
               Back
             </button>
 
-            <div className="text-center mb-4 sm:mb-6">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#0033A0]/10 rounded-xl flex items-center justify-center mx-auto mb-2 sm:mb-3">
-                <UserPlus className="w-6 h-6 sm:w-7 sm:h-7 text-[#0033A0]" aria-hidden="true" />
+            <div className="text-center mb-6 sm:mb-8">
+              {/* Icon with glow effect */}
+              <div className="relative inline-block mb-4">
+                <div className="absolute inset-0 bg-[#0033A0] rounded-2xl blur-lg opacity-30 scale-110" />
+                <div className="relative w-16 h-16 sm:w-18 sm:h-18 bg-gradient-to-br from-[#0033A0] to-[#001a52] rounded-2xl flex items-center justify-center shadow-lg">
+                  <UserPlus className="w-7 h-7 sm:w-8 sm:h-8 text-white" aria-hidden="true" />
+                </div>
               </div>
-              <h2 className="text-lg sm:text-xl font-bold text-slate-900">Create Account</h2>
-              <p className="text-sm text-slate-400 mt-1">Enter your details below</p>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Create Account</h2>
+              <p className="text-sm text-slate-500 mt-1.5">Join the team in seconds</p>
             </div>
 
-            <form onSubmit={(e) => { e.preventDefault(); handleRegister(); }} className="space-y-4 sm:space-y-5">
+            <form onSubmit={(e) => { e.preventDefault(); handleRegister(); }} className="space-y-5 sm:space-y-6">
               <div>
-                <label htmlFor="user-name" className="block text-sm font-medium text-slate-700 mb-2">
+                <label htmlFor="user-name" className="block text-sm font-semibold text-slate-700 mb-2.5">
                   Your Name
                 </label>
                 <input
@@ -495,15 +511,15 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                   placeholder="Enter your name"
                   autoFocus
                   autoComplete="name"
-                  className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-[#0033A0] focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 transition-colors text-slate-900 placeholder-slate-300 text-base min-h-[48px] touch-manipulation"
+                  className="w-full px-4 py-3.5 rounded-xl border-2 border-slate-200 bg-slate-50/50 focus:border-[#0033A0] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#0033A0]/10 transition-all duration-200 text-slate-900 placeholder-slate-400 text-base min-h-[52px] touch-manipulation"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-700 mb-2.5">
                   Choose a PIN
                 </label>
-                <div className="flex justify-center gap-2 sm:gap-3" role="group" aria-label="Choose PIN">
+                <div className="flex justify-center gap-3" role="group" aria-label="Choose PIN">
                   {newUserPin.map((digit, index) => (
                     <input
                       key={index}
@@ -515,8 +531,8 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                       onChange={(e) => handlePinChange(index, e.target.value, newPinRefs, newUserPin, setNewUserPin)}
                       onKeyDown={(e) => handlePinKeyDown(e, index, newPinRefs, newUserPin)}
                       aria-label={`New PIN digit ${index + 1}`}
-                      className={`w-11 h-13 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-[#0033A0]/20 touch-manipulation ${
-                        digit ? 'border-[#0033A0] bg-[#0033A0]/5' : 'border-slate-200 focus:border-[#0033A0]'
+                      className={`w-12 h-14 sm:w-14 sm:h-16 text-center text-xl sm:text-2xl font-bold rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-[#0033A0]/10 touch-manipulation ${
+                        digit ? 'border-[#0033A0] bg-[#0033A0]/5 shadow-sm' : 'border-slate-200 bg-slate-50/50 focus:border-[#0033A0] focus:bg-white'
                       } text-slate-900`}
                     />
                   ))}
@@ -524,10 +540,10 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-700 mb-2.5">
                   Confirm PIN
                 </label>
-                <div className="flex justify-center gap-2 sm:gap-3" role="group" aria-label="Confirm PIN">
+                <div className="flex justify-center gap-3" role="group" aria-label="Confirm PIN">
                   {confirmPin.map((digit, index) => (
                     <input
                       key={index}
@@ -539,8 +555,8 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                       onChange={(e) => handlePinChange(index, e.target.value, confirmPinRefs, confirmPin, setConfirmPin)}
                       onKeyDown={(e) => handlePinKeyDown(e, index, confirmPinRefs, confirmPin)}
                       aria-label={`Confirm PIN digit ${index + 1}`}
-                      className={`w-11 h-13 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/20 touch-manipulation ${
-                        digit ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 focus:border-[#0033A0]'
+                      className={`w-12 h-14 sm:w-14 sm:h-16 text-center text-xl sm:text-2xl font-bold rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-4 touch-manipulation ${
+                        digit ? 'border-emerald-500 bg-emerald-50 focus:ring-emerald-500/20 shadow-sm' : 'border-slate-200 bg-slate-50/50 focus:border-emerald-500 focus:bg-white focus:ring-emerald-500/10'
                       } text-slate-900`}
                     />
                   ))}
@@ -548,25 +564,40 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
               </div>
 
               {error && (
-                <div className="flex items-center justify-center gap-2 text-red-600 text-sm bg-red-50 py-3 px-4 rounded-lg" role="alert">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
-                  <span>{error}</span>
+                <div className="flex items-center justify-center gap-2.5 text-red-600 text-sm bg-gradient-to-r from-red-50 to-red-100/50 py-3.5 px-5 rounded-xl border border-red-200/50" role="alert">
+                  <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                    <AlertCircle className="w-4 h-4" aria-hidden="true" />
+                  </div>
+                  <span className="font-medium">{error}</span>
                 </div>
               )}
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3.5 bg-[#0033A0] hover:bg-[#002878] active:bg-[#001d5c] text-white rounded-xl font-semibold transition-colors disabled:opacity-50 shadow-lg shadow-[#0033A0]/30 min-h-[48px] touch-manipulation text-base"
+                className="group relative w-full py-4 bg-gradient-to-r from-[#0033A0] to-[#002878] hover:from-[#002878] hover:to-[#001d5c] active:from-[#001d5c] active:to-[#001545] text-white rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 shadow-lg shadow-[#0033A0]/30 hover:shadow-xl hover:shadow-[#0033A0]/40 min-h-[56px] touch-manipulation text-base overflow-hidden"
               >
-                {isSubmitting ? 'Creating...' : 'Create Account'}
+                <span className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Creating Account...
+                    </>
+                  ) : (
+                    <>
+                      Create Account
+                      <ChevronLeft className="w-4 h-4 rotate-180 transition-transform group-hover:translate-x-0.5" />
+                    </>
+                  )}
+                </span>
               </button>
             </form>
           </div>
         )}
 
-        {/* Simplified Footer */}
-        <p className="text-center text-white/40 text-xs mt-6">
+        {/* Footer with branding */}
+        <p className="text-center text-white/40 text-xs font-medium tracking-wide mt-8">
           Bealer Agency Task Management
         </p>
       </div>
@@ -579,25 +610,37 @@ function UserButton({ user, onSelect }: { user: AuthUser; onSelect: (user: AuthU
   return (
     <button
       onClick={() => onSelect(user)}
-      className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 active:bg-slate-100 transition-colors text-left group min-h-[56px] touch-manipulation"
+      className="group w-full flex items-center gap-3.5 p-3 rounded-xl hover:bg-gradient-to-r hover:from-slate-50 hover:to-slate-100/50 active:bg-slate-100 transition-all duration-200 text-left min-h-[60px] touch-manipulation border border-transparent hover:border-slate-200/80 hover:shadow-sm"
       aria-label={`Sign in as ${user.name}`}
     >
-      <div
-        className="w-10 h-10 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-white font-semibold shadow-sm flex-shrink-0 text-sm sm:text-base"
-        style={{ backgroundColor: user.color }}
-        aria-hidden="true"
-      >
-        {getUserInitials(user.name)}
+      {/* Avatar with subtle glow on hover */}
+      <div className="relative flex-shrink-0">
+        <div
+          className="absolute inset-0 rounded-xl blur-md opacity-0 group-hover:opacity-40 transition-opacity duration-200"
+          style={{ backgroundColor: user.color }}
+        />
+        <div
+          className="relative w-11 h-11 rounded-xl flex items-center justify-center text-white font-semibold shadow-md text-sm ring-2 ring-white/80 group-hover:ring-white group-hover:shadow-lg transition-all duration-200"
+          style={{ backgroundColor: user.color }}
+          aria-hidden="true"
+        >
+          {getUserInitials(user.name)}
+        </div>
       </div>
+
       <div className="flex-1 min-w-0">
-        <span className="font-medium text-slate-900 block truncate text-base sm:text-sm">{user.name}</span>
+        <span className="font-semibold text-slate-800 block truncate text-base group-hover:text-slate-900 transition-colors">{user.name}</span>
         {user.last_login && (
-          <p className="text-xs text-slate-400">
-            Last: {new Date(user.last_login).toLocaleDateString()}
+          <p className="text-xs text-slate-400 mt-0.5">
+            Last login {new Date(user.last_login).toLocaleDateString()}
           </p>
         )}
       </div>
-      <Lock className="w-4 h-4 text-slate-300 group-hover:text-[#0033A0] transition-colors flex-shrink-0" aria-hidden="true" />
+
+      {/* Lock icon with animated transition */}
+      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-[#0033A0] flex items-center justify-center transition-all duration-200">
+        <Lock className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" aria-hidden="true" />
+      </div>
     </button>
   );
 }

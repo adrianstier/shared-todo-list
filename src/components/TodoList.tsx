@@ -1062,6 +1062,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
         {/* Actionable Stats Cards - Reduced to 3, always visible, clickable */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           <button
+            type="button"
             onClick={() => { setQuickFilter('all'); setShowCompleted(false); }}
             className={`rounded-xl p-3 border shadow-sm text-left transition-all hover:shadow-md ${
               quickFilter === 'all' && !showCompleted
@@ -1073,6 +1074,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
             <p className={`text-xs sm:text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>To Do</p>
           </button>
           <button
+            type="button"
             onClick={() => setQuickFilter('due_today')}
             className={`rounded-xl p-3 border shadow-sm text-left transition-all hover:shadow-md ${
               quickFilter === 'due_today'
@@ -1084,6 +1086,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
             <p className={`text-xs sm:text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Due Today</p>
           </button>
           <button
+            type="button"
             onClick={() => setQuickFilter('overdue')}
             className={`rounded-xl p-3 border shadow-sm text-left transition-all hover:shadow-md ${
               quickFilter === 'overdue'
@@ -1171,7 +1174,13 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
             ].map((f) => (
               <button
                 key={f.id}
-                onClick={() => setQuickFilter(f.id)}
+                type="button"
+                onClick={() => {
+                  setQuickFilter(f.id);
+                  if (f.id === 'all') {
+                    setShowCompleted(false);
+                  }
+                }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${
                   quickFilter === f.id
                     ? 'bg-[#0033A0] text-white'
@@ -1190,6 +1199,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
 
             {/* Show completed toggle */}
             <button
+              type="button"
               onClick={() => setShowCompleted(!showCompleted)}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${
                 showCompleted
@@ -1207,7 +1217,8 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
             {/* Active filter indicator */}
             {quickFilter !== 'all' && (
               <button
-                onClick={() => setQuickFilter('all')}
+                type="button"
+                onClick={() => { setQuickFilter('all'); setShowCompleted(false); }}
                 className="text-xs text-[#0033A0] hover:underline ml-auto"
               >
                 Clear filter
