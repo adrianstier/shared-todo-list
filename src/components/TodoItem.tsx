@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Trash2, Calendar, User, Flag, Copy, MessageSquare, ChevronDown, ChevronUp, Repeat, ListTree, Plus, Mail, Pencil } from 'lucide-react';
+import { Check, Trash2, Calendar, User, Flag, Copy, MessageSquare, ChevronDown, ChevronUp, Repeat, ListTree, Plus, Mail, Pencil, FileText } from 'lucide-react';
 import { Todo, TodoPriority, PRIORITY_CONFIG, RecurrencePattern, Subtask } from '@/types/todo';
 import Celebration from './Celebration';
 import ContentToSubtasksImporter from './ContentToSubtasksImporter';
@@ -118,6 +118,7 @@ interface TodoItemProps {
   onUpdateNotes?: (id: string, notes: string) => void;
   onSetRecurrence?: (id: string, recurrence: RecurrencePattern) => void;
   onUpdateSubtasks?: (id: string, subtasks: Subtask[]) => void;
+  onSaveAsTemplate?: (todo: Todo) => void;
 }
 
 const formatDueDate = (date: string) => {
@@ -173,6 +174,7 @@ export default function TodoItem({
   onUpdateNotes,
   onSetRecurrence,
   onUpdateSubtasks,
+  onSaveAsTemplate,
 }: TodoItemProps) {
   const [expanded, setExpanded] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
@@ -379,6 +381,20 @@ export default function TodoItem({
           >
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
+
+          {/* Save as Template */}
+          {onSaveAsTemplate && (
+            <button
+              onClick={() => onSaveAsTemplate(todo)}
+              className={`p-2 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                darkMode ? 'hover:bg-purple-900/50 text-slate-400 hover:text-purple-400' : 'hover:bg-purple-50 text-slate-400 hover:text-purple-600'
+              }`}
+              aria-label="Save as template"
+              title="Save as template"
+            >
+              <FileText className="w-4 h-4" />
+            </button>
+          )}
 
           {/* Duplicate */}
           {onDuplicate && (

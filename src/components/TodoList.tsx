@@ -34,12 +34,16 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   LayoutList, LayoutGrid, Wifi, WifiOff, Search,
   ArrowUpDown, User, Calendar, AlertTriangle, CheckSquare,
-  Trash2, X, Sun, Moon, ChevronDown, BarChart2
+  Trash2, X, Sun, Moon, ChevronDown, BarChart2, Activity
 } from 'lucide-react';
-import { AuthUser } from '@/types/todo';
+import { AuthUser, ACTIVITY_FEED_USERS, FULL_VISIBILITY_USERS } from '@/types/todo';
 import UserSwitcher from './UserSwitcher';
 import ChatPanel from './ChatPanel';
+import TemplatePicker from './TemplatePicker';
+import ActivityFeed from './ActivityFeed';
+import SaveTemplateModal from './SaveTemplateModal';
 import { useTheme } from '@/contexts/ThemeContext';
+import { logActivity } from '@/lib/activityLogger';
 
 interface TodoListProps {
   currentUser: AuthUser;
@@ -104,6 +108,8 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
   const [showWelcomeBack, setShowWelcomeBack] = useState(false);
   const [showWeeklyChart, setShowWeeklyChart] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showActivityFeed, setShowActivityFeed] = useState(false);
+  const [templateTodo, setTemplateTodo] = useState<Todo | null>(null);
   const [customOrder, setCustomOrder] = useState<string[]>([]);
 
   // DnD sensors for drag-and-drop reordering
@@ -291,6 +297,20 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
     if (insertError) {
       console.error('Error adding todo:', insertError);
       setTodos((prev) => prev.filter((t) => t.id !== newTodo.id));
+    } else {
+      // Log activity
+      logActivity({
+        action: 'task_created',
+        userName,
+        todoId: newTodo.id,
+        todoText: newTodo.text,
+        details: {
+          priority: newTodo.priority,
+          assigned_to: newTodo.assigned_to,
+          due_date: newTodo.due_date,
+          has_subtasks: (subtasks?.length || 0) > 0,
+        },
+      });
     }
   };
 
@@ -356,6 +376,31 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
       console.error('Error updating status:', updateError);
       if (oldTodo) {
         setTodos((prev) => prev.map((todo) => (todo.id === id ? oldTodo : todo)));
+      }
+    } else if (oldTodo) {
+      // Log activity
+      if (status === 'done' && oldTodo.status !== 'done') {
+        logActivity({
+          action: 'task_completed',
+          userName,
+          todoId: id,
+          todoText: oldTodo.text,
+        });
+      } else if (oldTodo.status === 'done' && status !== 'done') {
+        logActivity({
+          action: 'task_reopened',
+          userName,
+          todoId: id,
+          todoText: oldTodo.text,
+        });
+      } else {
+        logActivity({
+          action: 'status_changed',
+          userName,
+          todoId: id,
+          todoText: oldTodo.text,
+          details: { from: oldTodo.status, to: status },
+        });
       }
     }
   };
@@ -453,6 +498,13 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
       if (todoToDelete) {
         setTodos((prev) => [...prev, todoToDelete]);
       }
+    } else if (todoToDelete) {
+      logActivity({
+        action: 'task_deleted',
+        userName,
+        todoId: id,
+        todoText: todoToDelete.text,
+      });
     }
   };
 
@@ -488,6 +540,14 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
       if (oldTodo) {
         setTodos((prev) => prev.map((todo) => (todo.id === id ? oldTodo : todo)));
       }
+    } else if (oldTodo && oldTodo.assigned_to !== assignedTo) {
+      logActivity({
+        action: 'assigned_to_changed',
+        userName,
+        todoId: id,
+        todoText: oldTodo.text,
+        details: { from: oldTodo.assigned_to || null, to: assignedTo },
+      });
     }
   };
 
@@ -510,6 +570,14 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
       if (oldTodo) {
         setTodos((prev) => prev.map((todo) => (todo.id === id ? oldTodo : todo)));
       }
+    } else if (oldTodo && oldTodo.due_date !== dueDate) {
+      logActivity({
+        action: 'due_date_changed',
+        userName,
+        todoId: id,
+        todoText: oldTodo.text,
+        details: { from: oldTodo.due_date || null, to: dueDate },
+      });
     }
   };
 
@@ -530,6 +598,14 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
       if (oldTodo) {
         setTodos((prev) => prev.map((todo) => (todo.id === id ? oldTodo : todo)));
       }
+    } else if (oldTodo && oldTodo.priority !== priority) {
+      logActivity({
+        action: 'priority_changed',
+        userName,
+        todoId: id,
+        todoText: oldTodo.text,
+        details: { from: oldTodo.priority, to: priority },
+      });
     }
   };
 
@@ -550,6 +626,13 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
       if (oldTodo) {
         setTodos((prev) => prev.map((todo) => (todo.id === id ? oldTodo : todo)));
       }
+    } else if (oldTodo) {
+      logActivity({
+        action: 'notes_updated',
+        userName,
+        todoId: id,
+        todoText: oldTodo.text,
+      });
     }
   };
 
@@ -610,6 +693,33 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
       if (oldTodo) {
         setTodos((prev) => prev.map((todo) => (todo.id === id ? oldTodo : todo)));
       }
+    }
+  };
+
+  // Save task as template
+  const saveAsTemplate = async (name: string, isShared: boolean) => {
+    if (!templateTodo) return;
+
+    const response = await fetch('/api/templates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        description: templateTodo.text,
+        default_priority: templateTodo.priority || 'medium',
+        default_assigned_to: templateTodo.assigned_to || null,
+        subtasks: (templateTodo.subtasks || []).map(st => ({
+          text: st.text,
+          priority: st.priority,
+          estimatedMinutes: st.estimatedMinutes,
+        })),
+        created_by: userName,
+        is_shared: isShared,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to save template');
     }
   };
 
@@ -697,9 +807,10 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
   };
 
   // Filter todos based on user role visibility
-  // Admin can see all tasks, members can only see their own or assigned to them
+  // Admins and users in FULL_VISIBILITY_USERS can see all tasks
+  // Other members can only see their own or assigned to them
   const visibleTodos = useMemo(() => {
-    if (currentUser.role === 'admin') {
+    if (currentUser.role === 'admin' || FULL_VISIBILITY_USERS.includes(userName)) {
       return todos;
     }
     // Members can only see tasks they created or are assigned to them
@@ -895,6 +1006,17 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
                 </button>
               </div>
 
+              {/* Activity Feed - only for Derrick & Adrian */}
+              {ACTIVITY_FEED_USERS.includes(userName) && (
+                <button
+                  onClick={() => setShowActivityFeed(true)}
+                  className="p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                  aria-label="View activity feed"
+                >
+                  <Activity className="w-4 h-4" />
+                </button>
+              )}
+
               {/* Weekly progress chart */}
               <button
                 onClick={() => setShowWeeklyChart(true)}
@@ -970,8 +1092,18 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
           </button>
         </div>
 
-        {/* Add todo */}
-        <div className="mb-6">
+        {/* Add todo with template picker */}
+        <div className="mb-6 space-y-3">
+          <div className="flex items-center gap-2">
+            <TemplatePicker
+              currentUserName={userName}
+              users={users}
+              darkMode={darkMode}
+              onSelectTemplate={(text, priority, assignedTo, subtasks) => {
+                addTodo(text, priority, undefined, assignedTo, subtasks);
+              }}
+            />
+          </div>
           <AddTodo onAdd={addTodo} users={users} darkMode={darkMode} currentUserId={currentUser.id} />
         </div>
 
@@ -1207,6 +1339,7 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
                       onUpdateNotes={updateNotes}
                       onSetRecurrence={setRecurrence}
                       onUpdateSubtasks={updateSubtasks}
+                      onSaveAsTemplate={(t) => setTemplateTodo(t)}
                       isDragEnabled={!showBulkActions && sortOption === 'custom'}
                     />
                   ))
@@ -1294,6 +1427,34 @@ export default function TodoList({ currentUser, onUserChange }: TodoListProps) {
         onClose={() => setShowShortcuts(false)}
         darkMode={darkMode}
       />
+
+      {/* Activity Feed Slide-over */}
+      {showActivityFeed && ACTIVITY_FEED_USERS.includes(userName) && (
+        <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true" aria-label="Activity Feed">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowActivityFeed(false)}
+          />
+          <div className={`relative ml-auto w-full max-w-md h-full shadow-xl ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
+            <ActivityFeed
+              currentUserName={userName}
+              darkMode={darkMode}
+              onClose={() => setShowActivityFeed(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Save Template Modal */}
+      {templateTodo && (
+        <SaveTemplateModal
+          todo={templateTodo}
+          currentUserName={userName}
+          darkMode={darkMode}
+          onClose={() => setTemplateTodo(null)}
+          onSave={saveAsTemplate}
+        />
+      )}
 
       <ChatPanel currentUser={currentUser} users={usersWithColors} />
       </div>

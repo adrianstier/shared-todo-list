@@ -21,6 +21,7 @@ interface SortableTodoItemProps {
   onUpdateNotes?: (id: string, notes: string) => void;
   onSetRecurrence?: (id: string, recurrence: RecurrencePattern) => void;
   onUpdateSubtasks?: (id: string, subtasks: Subtask[]) => void;
+  onSaveAsTemplate?: (todo: Todo) => void;
   isDragEnabled?: boolean;
 }
 

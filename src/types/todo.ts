@@ -95,3 +95,57 @@ export interface ChatMessage {
 export type ChatConversation =
   | { type: 'team' }
   | { type: 'dm'; userName: string };
+
+// Task Template types
+export interface TemplateSubtask {
+  text: string;
+  priority: TodoPriority;
+  estimatedMinutes?: number;
+}
+
+export interface TaskTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  default_priority: TodoPriority;
+  default_assigned_to?: string;
+  subtasks: TemplateSubtask[];
+  created_by: string;
+  is_shared: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Activity Log types
+export type ActivityAction =
+  | 'task_created'
+  | 'task_updated'
+  | 'task_deleted'
+  | 'task_completed'
+  | 'task_reopened'
+  | 'status_changed'
+  | 'priority_changed'
+  | 'assigned_to_changed'
+  | 'due_date_changed'
+  | 'subtask_added'
+  | 'subtask_completed'
+  | 'subtask_deleted'
+  | 'notes_updated'
+  | 'template_created'
+  | 'template_used';
+
+export interface ActivityLogEntry {
+  id: string;
+  action: ActivityAction;
+  todo_id?: string;
+  todo_text?: string;
+  user_name: string;
+  details: Record<string, unknown>;
+  created_at: string;
+}
+
+// Users who can see the activity feed
+export const ACTIVITY_FEED_USERS = ['Derrick', 'Adrian', 'Sefra'];
+
+// Users who can see all todos (admins/managers)
+export const FULL_VISIBILITY_USERS = ['Derrick', 'Adrian', 'Sefra'];
